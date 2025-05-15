@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Moving Report Generator - v4.5 (Fixes Applied)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+  <style>
+    :root {
+      --company-pink: #f04e98;
+      --knicks-orange-accent: #f58426;
+      --knicks-blue-accent: #006bb6;
+
+      /* Light Theme (Default) */
+      --primary-bg: #f4f6f8;
+      --secondary-bg: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+      --border-color: #d1d5db;
+      --input-bg: #ffffff;
+      --input-text: #1f2937;
+      --input-border: #ccc;
+      --status-initial-bg: #f3f4f6; --status-initial-border: #9ca3af;
+      --status-pdf-bg: #d1fae5; --status-pdf-border: #10b981;
+      --status-user-bg: #dbeafe; --status-user-border: var(--knicks-blue-accent);
+      --status-attention-bg: #fffbeb; --status-attention-border: var(--knicks-orange-accent);
+      --button-secondary-bg: #6b7280; --button-secondary-hover-bg: #4b5563;
+      --debug-bg: #f9fafb; --debug-border: #e5e7eb;
+      --modal-content-bg: #ffffff; --modal-viewer-bg: #e9ecef;
+      --modal-header-border: #eee; --modal-text: #333;
+      --loader-color: var(--company-pink);
+    }
+
+    html.dark-mode { /* Applied to <html> for consistent variable scoping */
+      --primary-bg: #1a202c; --secondary-bg: #2d3748;
+      --text-primary: #e2e8f0; --text-secondary: #a0aec0;
+      --border-color: #4a5568; --input-bg: #2d3748;
+      --input-text: #e2e8f0; --input-border: #4a5568;
+      --status-initial-bg: #3e4c5f; --status-initial-border: #718096;
+      --status-pdf-bg: #2f5944; --status-pdf-border: #38a169;
+      --status-user-bg: #2c5282;
+      --status-attention-bg: #4c331a;
+      --button-secondary-bg: #5a6268; --button-secondary-hover-bg: #495057;
+      --debug-bg: #111722; --debug-border: var(--border-color);
+      --modal-content-bg: var(--secondary-bg); --modal-viewer-bg: var(--primary-bg);
+      --modal-header-border: var(--border-color); --modal-text: var(--text-primary);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px; background-color: var(--primary-bg); color: var(--text-primary);
+      line-height: 1.6; margin-bottom: 90px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    h1 { text-align: center; color: var(--company-pink); margin-bottom: 30px; font-weight: 700;}
+    h2 { color: var(--text-primary); border-bottom: 1px solid var(--company-pink); padding-bottom: 5px; margin-top:0; margin-bottom: 15px; }
+
+    select, input[type="text"], input[type="number"], input[type="file"], textarea {
+      width: 100%; padding: 10px; font-size: 16px; margin-top: 5px;
+      background-color: var(--input-bg); color: var(--input-text);
+      border: 1px solid var(--input-border); border-radius: 4px; box-sizing: border-box;
+      transition: border-color 0.3s ease, background-color 0.3s ease, border-left-color 0.3s ease;
+      border-left-width: 4px;
+    }
+    input[type="file"] { padding: 6px; }
+    textarea { resize: vertical; min-height: 80px; }
+    .no-comment-input { margin-top: 8px; min-height: 60px; }
+    label { display: block; margin-top: 15px; font-weight: 600; color: var(--text-secondary); }
+    input[type="checkbox"] { width: auto; margin-right: 8px; vertical-align: middle; }
+    label.checkbox-label { display: inline-block; margin-top: 15px; font-weight: normal; color: var(--text-primary); }
+
+    .field-initial-default { background-color: var(--status-initial-bg); border-left-color: var(--status-initial-border); }
+    .field-pdf-informed { background-color: var(--status-pdf-bg); border-left-color: var(--status-pdf-border); }
+    .field-user-modified { background-color: var(--status-user-bg); border-left-color: var(--status-user-border); }
+    .field-requires-attention { background-color: var(--status-attention-bg) !important; border-left-color: var(--status-attention-border) !important; font-weight: 500; }
+
+    button { margin-top: 20px; padding: 12px 20px; font-size: 16px; font-weight: 600; margin-right: 10px; background-color: var(--company-pink); color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease, filter 0.2s ease;}
+    button:hover { filter: brightness(1.1); }
+    button:active { transform: scale(0.98); }
+    button.secondary { background-color: var(--button-secondary-bg); }
+    button.secondary:hover { filter: brightness(0.9); } /* Adjusted hover for secondary */
+    #generateReportBtn.generated { background-color: #28a745 !important; }
+    #viewPdfBtn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1040; /* Below modal, above theme switch if modal not full screen */ background-color: var(--company-pink); box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 0; padding: 10px 15px; border-radius: 50px; }
+    #viewPdfBtn:hover { filter: brightness(1.15); }
+
+    pre { white-space: pre-wrap; word-wrap: break-word; background: var(--secondary-bg); color: var(--text-primary); padding: 15px; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+    #pdfStatus { color: #48bb78; }
+    #generationStatusMsg, #sheetDataStatus, #pdfGenerateStatus { min-height: 20px; margin-top:10px; font-weight: 500;}
+    #generationStatusMsg.success, #sheetDataStatus.success, #pdfGenerateStatus.success { color: #48bb78; }
+    #generationStatusMsg.error, #sheetDataStatus.error, #pdfGenerateStatus.error { color: #fc8181; }
+
+    #debugToggle { cursor: pointer; font-size: 14px; margin-top: 15px; color: var(--knicks-blue-accent); text-decoration: underline; display: block; }
+    #debugText { display: none; background: var(--debug-bg); border-color: var(--debug-border); color: var(--text-primary); }
+
+    .report-section { margin-bottom: 20px; padding: 20px; background: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background-color 0.3s ease, border-color 0.3s ease;}
+    .question-item, .sheet-data-item { margin-bottom: 15px; }
+    .no-comment-container { margin-top: 5px; padding-left: 10px; border-left: 3px solid var(--knicks-orange-accent); }
+
+    .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
+    .modal-content { background-color: var(--modal-content-bg); color: var(--modal-text); margin: auto; padding:0; border: 1px solid var(--border-color); width: 90%; max-width: 800px; border-radius: 8px; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--modal-header-border); flex-shrink: 0; }
+    .modal-header h3 { margin: 0; color: var(--company-pink); font-size: 1.1em; }
+    .modal-close-button-fixed { color: var(--text-secondary); font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0 5px; line-height: 1; /* Ensure X is centered */ }
+    .modal-close-button-fixed:hover { color: var(--text-primary); }
+    #pdfViewerContainer { width:100%; flex-grow: 1; overflow-y: auto; background: var(--modal-viewer-bg); padding:5px; text-align:center; }
+    #pdfViewerContainer canvas { margin-bottom: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.15); max-width: 100%; height: auto !important; background-color: white; }
+    .pdf-page-navigation { text-align: center; padding: 8px 0; background-color: var(--secondary-bg); border-top: 1px solid var(--border-color); flex-shrink: 0;}
+    .pdf-page-navigation button { margin: 0 5px; padding: 8px 12px; font-size: 14px; margin-top:0; background-color: var(--company-pink); color:white; }
+    .pdf-page-navigation button:disabled { background-color: #5a6268; cursor: not-allowed;}
+    .pdf-page-navigation span { color: var(--text-primary); }
+
+    .output-group { margin-top: 15px; }
+    .output-group label { font-size: 0.9em; color: var(--text-secondary); }
+    .output-group textarea { min-height: 60px; background-color: var(--primary-bg); border-color: var(--border-color); margin-top: 2px;}
+
+    .theme-switch-wrapper { display: flex; align-items: center; position: fixed; top: 15px; right: 15px; z-index: 1000; /* Lower than PDF modal */ background-color: var(--secondary-bg); padding: 8px 12px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+    .theme-switch-wrapper label { margin: 0 8px 0 0; color: var(--text-primary); font-size: 0.85em; line-height: 1; }
+    .theme-switch { display: inline-block; height: 22px; position: relative; width: 40px; }
+    .theme-switch input { display:none; }
+    .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 22px; }
+    .slider:before { background-color: #fff; bottom: 3px; content: ""; height: 16px; left: 3px; position: absolute; transition: .4s; width: 16px; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--company-pink); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    #photoSection { margin-top: 20px; }
+    #photoPreviews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; border: 1px dashed var(--border-color); padding: 10px; min-height: 50px; border-radius: 4px;}
+    .photo-preview-item { position: relative; border: 1px solid var(--border-color); padding: 5px; border-radius: 4px; background-color: var(--secondary-bg); }
+    .photo-preview-item img { max-width: 100px; max-height: 100px; display: block; border-radius: 2px; }
+    .photo-preview-item .delete-photo {
+        position: absolute; top: -8px; right: -8px; background: #dc3545; /* Red */ color: white;
+        border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 14px;
+        line-height: 22px; text-align: center; cursor: pointer; font-weight: bold;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .delete-photo:hover { background: #c82333; }
+    .loader { border: 5px solid var(--input-bg); border-top: 5px solid var(--loader-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="theme-switch-wrapper">
+    <label for="themeToggle">Dark</label>
+    <label class="theme-switch">
+      <input type="checkbox" id="themeToggle">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <h1>Moving Report Generator</h1>
+
+  <div class="report-section">
+    <label for="clientName">• Client Last Name:</label>
+    <input type="text" id="clientName" placeholder="Enter client's last name">
+  </div>
+
+  <div class="report-section">
+    <label for="job">• Job number:</label>
+    <input type="text" id="job" placeholder="Enter job number e.g., ######">
+    <label for="pdfFile" style="margin-top: 15px;">Upload PDF Inventory:</label>
+    <input type="file" id="pdfFile" accept="application/pdf">
+    <div id="pdfStatus"></div>
+  </div>
+
+  <div id="fields" class="report-section">
+    <h2>Report Details</h2>
+  </div>
+
+  <div class="report-section">
+    <label for="generalComments">Additional General Comments:</label>
+    <textarea id="generalComments" rows="3" placeholder="Enter any other comments here"></textarea>
+  </div>
+
+  <div class="report-section" id="photoSection">
+    <h2>Attach Photos for PDF Report</h2>
+    <input type="file" id="photoUpload" accept="image/*" multiple title="Select photos to include in PDF">
+    <div id="photoPreviews">
+        </div>
+  </div>
+
+  <div class="report-section">
+    <label for="rating">Rating:</label>
+    <select id="rating">
+      <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+      <option value="4" selected>4</option><option value="5">5</option>
+    </select>
+  </div>
+
+  <button id="generateReportBtn" onclick="generateReport()">Generate Report Text</button>
+  <button id="generatePdfWithPhotosBtn" onclick="generatePdfWithPhotos()">📄 Generate PDF with Report & Photos</button>
+  <div id="pdfGenerateLoader" class="loader"></div>
+  <div id="pdfGenerateStatus"></div>
+
+  <button onclick="copyToClipboardNew()">📋 Copy Report Text</button>
+  <button onclick="copyToClipboardFallback()" class="secondary">🧪 Copy (Old Method)</button>
+  <button onclick="selectText()" class="secondary">✍️ Select Text</button>
+  <div id="generationStatusMsg"></div>
+  <pre id="output"></pre>
+
+  <div class="report-section">
+    <h2>Data for Google Sheets Cell</h2>
+    <div class="sheet-data-item">
+      <label for="sheetWarehouse">Warehouse:</label>
+      <select id="sheetWarehouse">
+        <option value="">Select Warehouse</option>
+        <option value="Rdgvd">Rdgvd</option>
+        <option value="Roselle">Roselle</option>
+        <option value="Nj Roselle">Nj Roselle</option>
+        <option value="Masp1">Masp1</option>
+        <option value="Masp2">Masp2</option>
+        <option value="Masp3">Masp3</option>
+        <option value="Masp4">Masp4</option>
+        <option value="Skillman">Skillman</option>
+        <option value="Traffic">Traffic</option>
+        <option value="LIC">LIC</option>
+        <option value="Bronx">Bronx</option>
+        <option value="OtherWH">Other (Specify)</option>
+      </select>
+    </div>
+    <div class="sheet-data-item">
+      <label for="sheetAddress">Location/Address (e.g., A23R):</label>
+      <input type="text" id="sheetAddress" placeholder="e.g., A23R or Street Address">
+    </div>
+    <div class="sheet-data-item">
+      <label for="sheetPallets">Pallets:</label>
+      <input type="number" id="sheetPallets" placeholder="e.g., 2" min="0">
+    </div>
+    <div class="sheet-data-item">
+      <label for="sheetItems">Items:</label>
+      <input type="number" id="sheetItems" placeholder="e.g., 20" min="0">
+      <small id="pdfItemCount" style="color:var(--text-secondary); display:block; margin-top:3px;"></small>
+    </div>
+    <div class="sheet-data-item">
+      <label for="sheetEmployeeName">Employee Name:</label>
+      <input type="text" id="sheetEmployeeName" placeholder="Your Name">
+    </div>
+    <div class="sheet-data-item">
+        <input type="checkbox" id="sheetBingoStatusOK" checked>
+        <label for="sheetBingoStatusOK" class="checkbox-label">Inventory OK (Bingo)?</label>
+        <div id="sheetBingoDetailsContainer" style="display:none; margin-top:5px;">
+            <label for="sheetBingoDetails">Bingo Issues (e.g., #34v, #3m):</label>
+            <input type="text" id="sheetBingoDetails" placeholder="#ID void/missing">
+        </div>
+    </div>
+    <div class="sheet-data-item">
+      <label>Materials (approx. from PDF, please verify):</label>
+      <div>
+        TV Boxes: <input type="number" id="sheetMatTV" placeholder="0" min="0" style="width: 60px; margin-right:10px;">
+        Wardrobes: <input type="number" id="sheetMatWR" placeholder="0" min="0" style="width: 60px; margin-right:10px;">
+        Blankets: <input type="number" id="sheetMatBL" placeholder="0" min="0" style="width: 60px;">
+        <small id="pdfMaterialCounts" style="color:var(--text-secondary); display:block; margin-top:3px;"></small>
+      </div>
+    </div>
+    <div class="output-group">
+        <label for="sheetOutputString">Formatted String for Google Sheets:</label>
+        <textarea id="sheetOutputString" readonly rows="2"></textarea>
+        <button onclick="copySheetString()" style="margin-top:10px;">📋 Copy Sheet String</button>
+        <div id="sheetDataStatus"></div>
+    </div>
+    <button id="resetSheetDataBtn" onclick="resetSheetDataForm()" class="secondary" style="margin-top:10px;">Reset Sheet Data Fields</button>
+  </div>
+
+  <div id="debugToggle" onclick="toggleDebug()">Show Extracted PDF Text</div>
+  <pre id="debugText"></pre>
+  <button id="viewPdfBtn" onclick="openPdfModal()">📄 View PDF</button>
+  <div id="pdfModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Uploaded PDF Document</h3>
+        <span class="modal-close-button-fixed" onclick="closePdfModalWithHistory()" title="Close PDF Viewer">&times;</span>
+      </div>
+      <div id="pdfViewerContainer"></div>
+      <div class="pdf-page-navigation">
+        <button id="prevPage">Previous</button>
+        <span>Page <span id="currentPageNum">0</span> of <span id="totalPagesNum">0</span></span>
+        <button id="nextPage">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    if (typeof pdfjsLib === 'undefined') {
+        console.error("PDF.js library is not loaded!");
+    } else {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+    if (typeof jspdf === 'undefined') {
+        console.error("jsPDF library is not loaded!");
+    }
+
+    let isReportGenerated = false;
+    let loadedPdfDocument = null;
+    let currentPageInView = 1;
+    const attentionFieldIds = ['wooden', 'corners', 'volume'];
+    const sheetDataInputIds = ['sheetWarehouse', 'sheetAddress', 'sheetPallets', 'sheetItems', 'sheetEmployeeName', 'sheetBingoStatusOK', 'sheetBingoDetails', 'sheetMatTV', 'sheetMatWR', 'sheetMatBL'];
+    let selectedPhotos = [];
+
+    const questions = [
+      { id: "sofa", text: "Sofa is full shrinked and wrapped in blankets:", options: ["YES", "NO", "NO SOFA"], itemName: "Sofa" },
+      { id: "mattress", text: "Mattress in box, full shrinked and wrapped in blankets:", options: ["YES", "NO", "NO MATTRESS"], itemName: "Mattress" },
+      { id: "wardrobe", text: "Wardrobe with only clothes/pillows inside:", options: ["YES", "NO", "NO WARDROBE"], itemName: "Wardrobe" },
+      { id: "tvbox", text: "TV Box with only TV or Paintings inside:", options: ["YES", "NO", "NO TV BOX"], itemName: "TV Box" },
+      { id: "paintings", text: "Paintings or glass in TV Box are separated from each other by boxes:", options: ["YES", "NO", "NO PAINTING/GLASS"], itemName: "Paintings/Glass" },
+      { id: "corners", text: "Corners/Cardboard are placed on all furniture where required:", options: ["YES", "NO", "NO NEED"], itemName: "Corners/Cardboard" },
+      { id: "wooden", text: "Wooden items are full wrapped in blankets:", options: ["YES", "NO", "NO WOODEN PARTS"], itemName: "Wooden Items" },
+      { id: "leather", text: "Leather items are wrapped in blankets without shrink:", options: ["YES", "NO", "NO LEATHER ITEMS"], itemName: "Leather Items" },
+      { id: "suitcases", text: "Suitcases are full shrinked:", options: ["YES", "NO", "NO SUITCASES"], itemName: "Suitcases" },
+      { id: "lamps", text: "Lamps in Boxes/Bubble wrap:", options: ["YES", "NO", "NO LAMPS"], itemName: "Lamps" },
+      { id: "bikes", text: "Bicycle/Peloton is full wrapped in blankets:", options: ["YES", "NO", "NO BIKES"], itemName: "Bicycle/Peloton" },
+      { id: "rugs", text: "Rugs/Carpets are full shrinked:", options: ["YES", "NO", "NO RUGS"], itemName: "Rugs/Carpets" },
+      { id: "hardware", text: "Hardware Box:", options: ["YES", "NO", "NO NEEDED"], itemName: "Hardware Box" },
+      { id: "volume", text: "The CuFt volume of the job is correct :", options: ["YES", "NO"], itemName: "CuFt Volume" }
+    ];
+    const defaultValuesConfig = {
+      sofa: "NO SOFA", mattress: "NO MATTRESS", wardrobe: "NO WARDROBE", tvbox: "NO TV BOX",
+      paintings: "NO PAINTING/GLASS", corners: "YES", wooden: "YES", leather: "NO LEATHER ITEMS",
+      suitcases: "NO SUITCASES", lamps: "NO LAMPS", bikes: "NO BIKES", rugs: "NO RUGS",
+      hardware: "NO NEEDED", volume: "YES"
+    };
+    const keywordMap = {
+        sofa: ["sofa", "couch", "ottoman", "loveseat", "settee", "sectional", "sofa bed"],
+        mattress: ["mattress", "box spring", "boxspring"],
+        wardrobe: ["wardrobe", "wardrobe box", "armoire"],
+        tvbox: ["tv box", "tvbox"],
+        paintings: ["painting", "glass", "picture", "art", "canvas", "mirror"], leather: ["leather"],
+        suitcases: ["suitcase"], lamps: ["lamp"], bikes: ["bike", "bicycle", "peloton", "exercise bike"],
+        rugs: ["rug", "carpet"], hardware: ["hardware", "hardware box"]
+    };
+
+    const fieldContainer = document.getElementById("fields");
+    const allInputElementsForReset = [];
+
+    // --- Theme Functions ---
+    function applyCurrentTheme() { /* Kept from 4.5, uses documentElement */ const themeToggleCheckbox = document.getElementById('themeToggle'); const savedTheme = localStorage.getItem('theme'); if (themeToggleCheckbox) { if (savedTheme === 'dark-mode') { document.documentElement.classList.add('dark-mode'); themeToggleCheckbox.checked = true; } else { document.documentElement.classList.remove('dark-mode'); themeToggleCheckbox.checked = false; if (!savedTheme) localStorage.setItem('theme', 'light-mode'); } } }
+    function setupThemeToggle() { /* Kept from 4.5, uses documentElement */ const themeToggleCheckbox = document.getElementById('themeToggle'); if (themeToggleCheckbox) { themeToggleCheckbox.addEventListener('change', function() { if (this.checked) { document.documentElement.classList.add('dark-mode'); localStorage.setItem('theme', 'dark-mode'); } else { document.documentElement.classList.remove('dark-mode'); localStorage.setItem('theme', 'light-mode'); } }); } }
+
+    function applyAttentionHighlight(element) {
+        if (!element) return;
+        element.classList.remove('field-requires-attention');
+        if (attentionFieldIds.includes(element.id) && element.value === 'YES' && element.dataset.status !== 'user-modified') {
+            element.classList.add('field-requires-attention');
+        }
+    }
+
+    function setFieldStatus(element, status) {
+        if (!element) { /* console.error("setFieldStatus: element is null for status", status); */ return; }
+        element.classList.remove('field-initial-default', 'field-pdf-informed', 'field-user-modified', 'field-requires-attention');
+        if (status) element.classList.add(`field-${status}`);
+        element.dataset.status = status;
+        applyAttentionHighlight(element);
+        if (isReportGenerated && status === 'user-modified' && !sheetDataInputIds.includes(element.id) ) {
+            resetGenerateButton();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyCurrentTheme(); setupThemeToggle();
+        if(fieldContainer) { questions.forEach(q => { const questionDiv = document.createElement("div"); questionDiv.className = "question-item"; const label = document.createElement("label"); label.htmlFor = q.id; label.textContent = "• " + q.text; questionDiv.appendChild(label); const select = document.createElement("select"); select.id = q.id; select.dataset.itemId = q.id; select.dataset.itemName = q.itemName; q.options.forEach(optText => { const o = document.createElement("option"); o.text = optText; o.value = optText; select.add(o); }); questionDiv.appendChild(select); allInputElementsForReset.push(select); const commentContainer = document.createElement("div"); commentContainer.id = `no_comment_container_${q.id}`; commentContainer.className = "no-comment-container"; commentContainer.style.display = "none"; const commentTextarea = document.createElement("textarea"); commentTextarea.id = `no_comment_textarea_${q.id}`; commentTextarea.className = "no-comment-input"; commentTextarea.placeholder = `Details for ${q.itemName} (NO)...`; commentContainer.appendChild(commentTextarea); questionDiv.appendChild(commentContainer); allInputElementsForReset.push(commentTextarea); fieldContainer.appendChild(questionDiv); select.addEventListener('change', (event) => { handleNoSelection(event); setFieldStatus(select, 'user-modified'); }); commentTextarea.addEventListener('input', () => { setFieldStatus(commentTextarea, 'user-modified'); }); if (defaultValuesConfig[q.id]) { select.value = defaultValuesConfig[q.id]; } setFieldStatus(select, 'initial-default'); setFieldStatus(commentTextarea, 'initial-default'); if (select.value === "NO") { select.dispatchEvent(new Event('change')); } }); }
+        ['clientName', 'job', 'generalComments', 'rating'].forEach(id => { const element = document.getElementById(id); if (element) { allInputElementsForReset.push(element); const eventType = element.tagName === 'SELECT' ? 'change' : 'input'; element.addEventListener(eventType, () => setFieldStatus(element, 'user-modified')); setFieldStatus(element, 'initial-default'); }});
+        sheetDataInputIds.forEach(id => { const element = document.getElementById(id); if (element) { element.addEventListener('input', updateSheetOutputString); element.addEventListener('change', updateSheetOutputString); if (id === 'sheetEmployeeName' || id === 'sheetWarehouse') { element.addEventListener('change', saveSheetDataToLocalStorage); } }});
+        const bingoCheckboxInit = document.getElementById('sheetBingoStatusOK'); if(bingoCheckboxInit) {bingoCheckboxInit.addEventListener('change', function() { const detailsContainer = document.getElementById('sheetBingoDetailsContainer'); const detailsInput = document.getElementById('sheetBingoDetails'); if(detailsContainer) detailsContainer.style.display = this.checked ? 'none' : 'block'; if (this.checked && detailsInput) { detailsInput.value = ''; } updateSheetOutputString(); });}
+        loadSheetDataFromLocalStorage(); updateSheetOutputString();
+        const bingoStatusElInit = document.getElementById('sheetBingoStatusOK'); const bingoDetailsContainerElInit = document.getElementById('sheetBingoDetailsContainer'); if(bingoStatusElInit && bingoDetailsContainerElInit) {bingoDetailsContainerElInit.style.display = bingoStatusElInit.checked ? 'none' : 'block';}
+        allInputElementsForReset.forEach(el => { if(!el) return; const eventType = (el.tagName === 'SELECT' || el.id === 'rating' || el.type === 'checkbox') ? 'change' : 'input'; el.removeEventListener(eventType, resetGenerateButton); el.addEventListener(eventType, resetGenerateButton); });
+        const pdfFileInput = document.getElementById("pdfFile"); if (pdfFileInput) { pdfFileInput.addEventListener("change", handlePdfFileChange); }
+        const photoUploadEl = document.getElementById('photoUpload'); if (photoUploadEl) { photoUploadEl.addEventListener('change', handlePhotoUpload); }
+        window.addEventListener('popstate', function(event) { const pdfModal = document.getElementById('pdfModal'); if (pdfModal && pdfModal.style.display === 'flex' && event.state && event.state.pdfModalOpen) { closePdfModal(false); /* Close without pushing new history state, as popstate already changed it */ }});
+        const prevPageBtn = document.getElementById('prevPage'); if(prevPageBtn) prevPageBtn.addEventListener('click', () => { if (currentPageInView > 1) displayPdfPageInModal(currentPageInView - 1); });
+        const nextPageBtn = document.getElementById('nextPage'); if(nextPageBtn) nextPageBtn.addEventListener('click', () => { if (loadedPdfDocument && currentPageInView < loadedPdfDocument.numPages) displayPdfPageInModal(currentPageInView + 1); });
+    });
+
+    function handleNoSelection(event) {
+        const selectElement = event.target;
+        const itemId = selectElement.dataset.itemId;
+        const itemName = selectElement.dataset.itemName;
+        const commentContainer = document.getElementById(`no_comment_container_${itemId}`);
+        const commentTextarea = document.getElementById(`no_comment_textarea_${itemId}`);
+        const noCommentTemplate = `${itemName} (NO): `;
+        if (selectElement.value === "NO") {
+            if (commentTextarea && (commentTextarea.value.trim() === "" || commentTextarea.dataset.status !== 'user-modified')) {
+                commentTextarea.value = noCommentTemplate;
+            }
+            if(commentContainer) commentContainer.style.display = "block";
+        } else {
+            if(commentContainer) commentContainer.style.display = "none";
+        }
+    }
+
+    async function readPDF(file) { // This function was mostly complete in 4.5, kept as is.
+        const buffer = await file.arrayBuffer();
+        const pdfDoc = await pdfjsLib.getDocument({ data: buffer }).promise;
+        loadedPdfDocument = pdfDoc;
+        let fullText = "";
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const content = await page.getTextContent();
+            fullText += content.items.map(item => item.str).join(" ") + "\n";
+        }
+        const inventoryLines = fullText.toLowerCase().split('\n');
+        const itemCountMatch = fullText.match(/Number of Pieces\s*:\s*(\d+)/i);
+        const itemCountEl = document.getElementById('sheetItems');
+        const pdfItemCountEl = document.getElementById('pdfItemCount');
+        if (itemCountEl) {
+            if (itemCountMatch && itemCountMatch[1]) {
+                itemCountEl.value = itemCountMatch[1];
+                if(pdfItemCountEl) pdfItemCountEl.textContent = `(PDF says: ${itemCountMatch[1]} pieces)`;
+                setFieldStatus(itemCountEl, 'pdf-informed');
+            } else {
+                if(pdfItemCountEl) pdfItemCountEl.textContent = "(Item count not found in PDF)";
+                setFieldStatus(itemCountEl, 'initial-default');
+            }
+        }
+        let tvCount = 0; let wrCount = 0; let blCount = 0;
+        inventoryLines.forEach(line => {
+            if (/\b(tv box|tvbox)\b/i.test(line) && !/content|description|header/i.test(line.substring(0,30))) tvCount++;
+            if (/\b(wardrobe box)\b/i.test(line) && !/content|description|header/i.test(line.substring(0,30))) wrCount++;
+            if (/\b(blanket|blankets)\b/i.test(line) && (line.includes("pack type") || line.split(/\s\s+/).length > 3) && !/content|description|header/i.test(line.substring(0,30))) blCount++;
+        });
+        const sheetMatTVEl = document.getElementById('sheetMatTV');
+        const sheetMatWREl = document.getElementById('sheetMatWR');
+        const sheetMatBLEl = document.getElementById('sheetMatBL');
+        if(sheetMatTVEl) { sheetMatTVEl.value = tvCount > 0 ? tvCount : ""; setFieldStatus(sheetMatTVEl, tvCount > 0 ? 'pdf-informed' : 'initial-default');}
+        if(sheetMatWREl) { sheetMatWREl.value = wrCount > 0 ? wrCount : ""; setFieldStatus(sheetMatWREl, wrCount > 0 ? 'pdf-informed' : 'initial-default');}
+        if(sheetMatBLEl) { sheetMatBLEl.value = blCount > 0 ? blCount : ""; setFieldStatus(sheetMatBLEl, blCount > 0 ? 'pdf-informed' : 'initial-default');}
+        const pdfMaterialCountsEl = document.getElementById('pdfMaterialCounts');
+        if(pdfMaterialCountsEl) pdfMaterialCountsEl.textContent = `(Approx. PACK TYPES: ${tvCount} TV Box, ${wrCount} Wardrobe Box, ${blCount} Blanket-Wrapped Items)`;
+        updateSheetOutputString();
+        return fullText;
+    }
+
+    async function handlePdfFileChange(e) {
+        const file = e.target.files[0];
+        const pdfStatus = document.getElementById("pdfStatus");
+        const viewPdfBtn = document.getElementById("viewPdfBtn");
+        loadedPdfDocument = null; 
+
+        if (viewPdfBtn) viewPdfBtn.style.display = 'none';
+
+        if (!file) {
+            if (pdfStatus) pdfStatus.textContent = "No file selected.";
+            return;
+        }
+
+        if (pdfStatus) pdfStatus.textContent = `Loading ${file.name}...`;
+
+        try {
+            const rawText = await readPDF(file); 
+            const lowerCaseText = rawText.toLowerCase();
+            const debugTextEl = document.getElementById("debugText");
+
+            if (debugTextEl) debugTextEl.textContent = rawText || "(no text found)";
+            if (pdfStatus) pdfStatus.textContent = `Successfully loaded: ${file.name}`;
+            if (viewPdfBtn) viewPdfBtn.style.display = 'inline-block'; 
+            currentPageInView = 1; 
+
+            let jobNumber = "", clientName = "";
+
+            const jobRegexPatterns = [/Shipment Number\s*.*?(\b\d{5,}\b)/i, /Job number\s*.*?(\b\d{5,}\b)/i];
+            for (const pattern of jobRegexPatterns) {
+                const jobMatch = rawText.match(pattern);
+                if (jobMatch && jobMatch[1]) {
+                    jobNumber = jobMatch[1];
+                    break;
+                }
+            }
+            if (!jobNumber) {
+                const simpleJobMatch = rawText.match(/(?:Shipment Number|Job number)\s*(\d{5,})/i);
+                if (simpleJobMatch && simpleJobMatch[1]) {
+                    jobNumber = simpleJobMatch[1];
+                }
+            }
+
+            const shipperNameRegex = /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])(?=\s*(?:Shipment Number|PIECE OF CAKE|USDOT|\d{2}\/\d{2}\/\d{4}|Origin Loading Address))/i;
+            let nameMatch = rawText.match(shipperNameRegex);
+            if (nameMatch && nameMatch[1]) {
+                clientName = nameMatch[1].replace(/[\n\r]+/g, ' ').trim();
+            } else if (jobNumber) {
+                try {
+                    const nameBetweenRegex = new RegExp(`Shipment\\s*Number\\s*([A-Za-z][A-Za-z\\s'-]*[A-Za-z])\\s*${jobNumber}`, "i");
+                    nameMatch = rawText.match(nameBetweenRegex);
+                    if (nameMatch && nameMatch[1]) clientName = nameMatch[1].trim();
+                } catch (regexError) {
+                    console.error("Regex error for client name:", regexError);
+                }
+            }
+            if (!clientName) {
+                const customerSigRegex = /Customer Signature(?:[\s\S]*?Date[\s\S]*?){2}([A-Za-z\s'-]+?)(?:\n|\r|X\s|$)/i;
+                nameMatch = rawText.match(customerSigRegex);
+                if (nameMatch && nameMatch[1]) {
+                    let sigName = nameMatch[1].replace(/packer pac/i, '').replace(/Date/i, '').trim();
+                    if (sigName.length > 1 && sigName.toLowerCase() !== 'x' && sigName.split(/\s+/).length <= 3) clientName = sigName;
+                }
+            }
+
+            const clientNameEl = document.getElementById("clientName");
+            if (clientNameEl) { 
+                clientNameEl.value = clientName ? clientName.split(/\s+/).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).filter(Boolean).join(" ") : "";
+                setFieldStatus(clientNameEl, clientName ? 'pdf-informed' : 'initial-default'); 
+            }
+
+            const jobEl = document.getElementById("job");
+            if (jobEl) { 
+                jobEl.value = jobNumber;
+                setFieldStatus(jobEl, jobNumber ? 'pdf-informed' : 'initial-default');
+            }
+            
+            questions.forEach(q => { 
+                const select = document.getElementById(q.id);
+                if (select) { 
+                    const keywords = keywordMap[q.id] || [];
+                    let itemFound = keywords.length > 0 && keywords.some(kw => lowerCaseText.includes(kw.toLowerCase()));
+                    let currentStatus = 'pdf-informed';
+
+                    if (attentionFieldIds.includes(q.id)) { 
+                        select.value = defaultValuesConfig[q.id]; 
+                    } else if (itemFound) {
+                        select.value = "YES";
+                    } else {
+                        select.value = defaultValuesConfig[q.id] || q.options.find(opt => opt.startsWith("NO ")) || q.options[1];
+                    }
+                    setFieldStatus(select, currentStatus);
+                    if (select.value === "NO") {
+                        select.dispatchEvent(new Event('change')); 
+                    }
+                }
+            });
+            
+            resetGenerateButton(); 
+
+        } catch (err) {
+            if (pdfStatus) pdfStatus.textContent = "Failed to read PDF.";
+            console.error("Error reading PDF in handlePdfFileChange:", err);
+            alert("Error reading PDF file. Check console for details.");
+            if (viewPdfBtn) viewPdfBtn.style.display = 'none';
+        }
+    }
+
+
+    function resetGenerateButton() {
+        const generateBtn = document.getElementById("generateReportBtn");
+        if(generateBtn) {
+            generateBtn.textContent = "Generate Report Text";
+            generateBtn.classList.remove("generated");
+        }
+        const genStatusMsg = document.getElementById("generationStatusMsg");
+        if(genStatusMsg) {
+            genStatusMsg.textContent = "";
+            genStatusMsg.className = "";
+        }
+        isReportGenerated = false;
+    }
+
+    function generateReport() {
+        const generateBtn = document.getElementById("generateReportBtn");
+        const generationStatusMsg = document.getElementById("generationStatusMsg");
+        if(generationStatusMsg) {generationStatusMsg.textContent = ""; generationStatusMsg.className = "";}
+        let allNoCommentsValid = true;
+        let missingCommentsMessages = [];
+        questions.forEach(q => {
+            const selectElement = document.getElementById(q.id);
+            const commentTextarea = document.getElementById(`no_comment_textarea_${q.id}`);
+            if(commentTextarea) commentTextarea.style.borderColor = "var(--input-border)";
+            if (selectElement && selectElement.value === "NO") {
+                const itemName = selectElement.dataset.itemName;
+                const templatePrefix = `${itemName} (NO): `;
+                const currentComment = commentTextarea ? commentTextarea.value.trim() : "";
+                if (currentComment === "" || currentComment === templatePrefix.trim()) {
+                    allNoCommentsValid = false;
+                    missingCommentsMessages.push(`Comment for "${q.itemName}" (NO) is required.`);
+                    if(commentTextarea) commentTextarea.style.borderColor = "red";
+                }
+            }
+        });
+        if (!allNoCommentsValid) {
+            if(generationStatusMsg) {generationStatusMsg.textContent = "Validation failed. Please check comments."; generationStatusMsg.className = "error";}
+            alert("Please provide valid comments for all items marked 'NO':\n\n" + missingCommentsMessages.join("\n"));
+            return;
+        }
+        const getVal = id => {const el = document.getElementById(id); return el ? el.value : "";};
+        let report = `• Client Last Name:\n${getVal("clientName")}\n`;
+        report += `• Job number:\n${getVal("job")}\n`;
+        questions.forEach(q => {
+            report += `• ${q.text}\n${getVal(q.id)}\n`;
+        });
+        let collectedComments = [];
+        questions.forEach(q => {
+            const selectEl = document.getElementById(q.id);
+            if (selectEl && selectEl.value === "NO") {
+                const commentTextAreaEl = document.getElementById(`no_comment_textarea_${q.id}`);
+                const commentText = commentTextAreaEl ? commentTextAreaEl.value.trim() : "";
+                if (commentText) collectedComments.push("• " + commentText);
+            }
+        });
+        const generalCommentsVal = getVal("generalComments").split("\n").map(l => l.trim()).filter(Boolean).map(l => "• " + l);
+        const allComments = [...collectedComments, ...generalCommentsVal].join("\n");
+        report += `Comments (each "NO" in report should have comment here):\n${allComments.length > 0 ? allComments : "• None"}\n\nRating ${getVal("rating")}`;
+        const outputEl = document.getElementById("output");
+        if(outputEl) outputEl.textContent = report.trim();
+        if(generateBtn) {generateBtn.textContent = "Generated! ✔"; generateBtn.classList.add("generated");}
+        if(generationStatusMsg) {generationStatusMsg.textContent = "Report generated successfully!"; generationStatusMsg.className = "success";}
+        isReportGenerated = true;
+    }
+
+    function updateSheetOutputString() {
+        const warehouseEl = document.getElementById('sheetWarehouse');
+        const addressEl = document.getElementById('sheetAddress');
+        const palletsEl = document.getElementById('sheetPallets');
+        const itemsEl = document.getElementById('sheetItems');
+        const employeeNameEl = document.getElementById('sheetEmployeeName');
+        const bingoStatusOkEl = document.getElementById('sheetBingoStatusOK');
+        const bingoDetailsEl = document.getElementById('sheetBingoDetails');
+        const matTvEl = document.getElementById('sheetMatTV');
+        const matWrEl = document.getElementById('sheetMatWR');
+        const matBlEl = document.getElementById('sheetMatBL');
+
+        const warehouse = warehouseEl ? warehouseEl.value : "";
+        const address = addressEl ? addressEl.value.trim() : "";
+        const palletsVal = palletsEl ? palletsEl.value : "";
+        const pallets = palletsVal && parseInt(palletsVal) > 0 ? `${palletsVal}pal` : "";
+        const itemsVal = itemsEl ? itemsEl.value : "";
+        const items = itemsVal ? `${itemsVal}itm` : "";
+        const employeeName = employeeNameEl ? employeeNameEl.value.trim() : "";
+        let bingoStatus;
+        if (bingoStatusOkEl && bingoStatusOkEl.checked) {
+            bingoStatus = "bingo";
+        } else {
+            bingoStatus = bingoDetailsEl ? bingoDetailsEl.value.trim() : "issue_not_specified";
+            if(bingoStatus === "") bingoStatus = "issue_not_specified";
+        }
+        const matTV = matTvEl ? matTvEl.value : "";
+        const matWR = matWrEl ? matWrEl.value : "";
+        const matBL = matBlEl ? matBlEl.value : "";
+        let materialsArray = [];
+        if (matTV && parseInt(matTV) > 0) materialsArray.push(`${matTV}tv`);
+        if (matWR && parseInt(matWR) > 0) materialsArray.push(`${matWR}wr`);
+        if (matBL && parseInt(matBL) > 0) materialsArray.push(`${matBL}bl`);
+        const materialsString = materialsArray.join(',');
+
+        const outputArray = [warehouse, address, pallets, items, employeeName, bingoStatus, materialsString];
+        const sheetOutputEl = document.getElementById('sheetOutputString');
+        if(sheetOutputEl) sheetOutputEl.value = outputArray.filter(s => s && s.trim() !== "").join(' | ');
+    }
+
+    function copySheetString() {
+        const sheetOutputEl = document.getElementById('sheetOutputString');
+        const textToCopy = sheetOutputEl ? sheetOutputEl.value : "";
+        const statusDiv = document.getElementById('sheetDataStatus');
+        if (!textToCopy) {
+            if(statusDiv) {statusDiv.textContent = "Nothing to copy."; statusDiv.className="error"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 2000);}
+            return;
+        }
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            if(statusDiv) {statusDiv.textContent = "Sheet string copied!"; statusDiv.className="success"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 2000);}
+        }).catch(err => {
+            console.error("Sheet string copy failed:", err);
+            if(statusDiv) {statusDiv.textContent = "Copy failed. Try manual."; statusDiv.className="error"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 3000);}
+        });
+    }
+
+    function resetSheetDataForm() {
+        sheetDataInputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if(!element) return;
+            if (element.type === 'checkbox') {
+                element.checked = (id === 'sheetBingoStatusOK');
+            } else if (element.tagName === 'SELECT') {element.value = "";}
+             else {element.value = "";}
+        });
+        const bingoDetailsContainerEl = document.getElementById('sheetBingoDetailsContainer');
+        if(bingoDetailsContainerEl) bingoDetailsContainerEl.style.display = 'none';
+        const pdfItemCountEl = document.getElementById('pdfItemCount');
+        if(pdfItemCountEl) pdfItemCountEl.textContent = "";
+        const pdfMaterialCountsEl = document.getElementById('pdfMaterialCounts');
+        if(pdfMaterialCountsEl) pdfMaterialCountsEl.textContent = "";
+        loadSheetDataFromLocalStorage();
+        updateSheetOutputString();
+    }
+
+    function saveSheetDataToLocalStorage() {
+        const empNameEl = document.getElementById('sheetEmployeeName');
+        const warehouseEl = document.getElementById('sheetWarehouse');
+        if(empNameEl) localStorage.setItem('sheetEmployeeName', empNameEl.value);
+        if(warehouseEl) localStorage.setItem('sheetWarehouse', warehouseEl.value);
+    }
+
+    function loadSheetDataFromLocalStorage() {
+        const savedName = localStorage.getItem('sheetEmployeeName');
+        const savedWarehouse = localStorage.getItem('sheetWarehouse');
+        const empNameEl = document.getElementById('sheetEmployeeName');
+        const warehouseEl = document.getElementById('sheetWarehouse');
+        if (savedName && empNameEl) empNameEl.value = savedName;
+        if (savedWarehouse && warehouseEl) warehouseEl.value = savedWarehouse;
+    }
+
+    // --- Photo Handling Functions ---
+    function handlePhotoUpload(event) {
+        const files = event.target.files;
+        const previewsContainer = document.getElementById('photoPreviews');
+        if (!previewsContainer) return;
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (!file.type.startsWith('image/')){ continue; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const photoId = `photo-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+                const newPhoto = { id: photoId, file: file, originalDataUrl: e.target.result, compressedDataUrl: null, width:0, height:0 };
+                selectedPhotos.push(newPhoto);
+                const previewItem = document.createElement('div');
+                previewItem.className = 'photo-preview-item';
+                previewItem.id = photoId;
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.onload = () => { newPhoto.width = img.width; newPhoto.height = img.height; };
+                previewItem.appendChild(img);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-photo';
+                deleteBtn.innerHTML = '&#x2716;';
+                deleteBtn.title = "Delete photo";
+                deleteBtn.onclick = function() {
+                    selectedPhotos = selectedPhotos.filter(p => p.id !== photoId);
+                    const itemToRemove = document.getElementById(photoId);
+                    if(itemToRemove) itemToRemove.remove();
+                };
+                previewItem.appendChild(deleteBtn);
+                previewsContainer.appendChild(previewItem);
+            };
+            reader.readAsDataURL(file);
+        }
+        if(event.target) event.target.value = null;
+    }
+
+    // --- PDF Generation with Photos ---
+    async function generatePdfWithPhotos() {
+        if (typeof jspdf === 'undefined' || typeof jspdf.jsPDF === 'undefined') { alert('Error: jsPDF library not loaded. Cannot generate PDF.'); return; }
+        const { jsPDF } = jspdf; const doc = new jsPDF({orientation: 'p', unit: 'mm', format: 'a4'});
+        const loader = document.getElementById('pdfGenerateLoader'); const statusEl = document.getElementById('pdfGenerateStatus');
+        if(loader) loader.style.display = 'block'; if(statusEl) { statusEl.textContent = 'Generating PDF... Please wait.'; statusEl.className = ''; }
+        await new Promise(resolve => setTimeout(resolve, 100));
+        try {
+            let yPos = 15; const pageHeight = doc.internal.pageSize.height; const margin = 15; const contentWidth = doc.internal.pageSize.width - margin * 2; const lineHeight = 7;
+            function addTextToPdf(text, x, currentY, options = {}) { if (currentY > pageHeight - margin - lineHeight) { doc.addPage(); currentY = margin; } doc.text(text, x, currentY, options); return currentY + lineHeight; }
+            function addBoldTextToPdf(text, x, currentY) { doc.setFont(undefined, 'bold'); currentY = addTextToPdf(text, x, currentY); doc.setFont(undefined, 'normal'); return currentY; }
+            doc.setFontSize(16); yPos = addBoldTextToPdf(`Client: ${document.getElementById('clientName').value || 'N/A'}`, margin, yPos); yPos = addBoldTextToPdf(`Job #: ${document.getElementById('job').value || 'N/A'}`, margin, yPos); yPos += lineHeight * 0.5;
+            doc.setFontSize(10); yPos = addBoldTextToPdf("Report Details:", margin, yPos);
+            questions.forEach(q => { const selectVal = document.getElementById(q.id).value; yPos = addTextToPdf(`• ${q.text}`, margin, yPos); const answerLines = doc.splitTextToSize(`  ${selectVal}`, contentWidth - 5); answerLines.forEach(line => { yPos = addTextToPdf(line, margin + 5, yPos); }); if (selectVal === "NO") { const commentTextarea = document.getElementById(`no_comment_textarea_${q.id}`); if (commentTextarea && commentTextarea.value.trim() !== `${q.itemName} (NO):`) { const commentLines = doc.splitTextToSize(`    Comment: ${commentTextarea.value.trim()}`, contentWidth - 10); commentLines.forEach(line => { yPos = addTextToPdf(line, margin + 7, yPos); });}}}); yPos += lineHeight * 0.5;
+            yPos = addBoldTextToPdf("General Comments:", margin, yPos); const generalComments = document.getElementById('generalComments').value.trim(); if (generalComments) { const commentLines = doc.splitTextToSize(generalComments, contentWidth); commentLines.forEach(line => { yPos = addTextToPdf("• " + line, margin, yPos); }); } else { yPos = addTextToPdf("• None", margin, yPos); } yPos += lineHeight * 0.5;
+            yPos = addBoldTextToPdf(`Rating: ${document.getElementById('rating').value}`, margin, yPos); yPos += lineHeight * 0.5;
+            yPos = addBoldTextToPdf("Google Sheets Data String:", margin, yPos); const sheetString = document.getElementById('sheetOutputString').value; const sheetStringLines = doc.splitTextToSize(sheetString, contentWidth); sheetStringLines.forEach(line => { yPos = addTextToPdf(line, margin, yPos); }); yPos += lineHeight;
+
+            if (selectedPhotos.length > 0) {
+                yPos = addBoldTextToPdf("Attached Photos:", margin, yPos);
+                for (const photo of selectedPhotos) {
+                    if (yPos > pageHeight - margin - 50) { doc.addPage(); yPos = margin; }
+                    try {
+                        const imgDataUrl = await compressImage(photo.originalDataUrl, 1024, 0.7);
+                        const img = new Image();
+                        img.src = imgDataUrl;
+                        await new Promise(resolve => img.onload = resolve);
+
+                        let imgWidth = img.width; let imgHeight = img.height;
+                        const maxImgWidth = contentWidth; const maxImgHeight = pageHeight - yPos - margin - 5; 
+                        
+                        if (imgWidth > maxImgWidth) { const ratio = maxImgWidth / imgWidth; imgWidth = maxImgWidth; imgHeight *= ratio; }
+                        if (imgHeight > maxImgHeight) { const ratio = maxImgHeight / imgHeight; imgHeight = maxImgHeight; imgWidth *= ratio; }
+                        if (imgHeight <=0 || imgWidth <= 0) { console.warn("Skipping image with zero dimension:", photo.file.name); continue; }
+
+                        if (yPos + imgHeight > pageHeight - margin) { doc.addPage(); yPos = margin; }
+                        const xCentered = (doc.internal.pageSize.width - imgWidth) / 2;
+                        doc.addImage(imgDataUrl, 'JPEG', xCentered, yPos, imgWidth, imgHeight);
+                        yPos += imgHeight + 5;
+                    } catch (imgError) { console.error("Error processing/adding image:", photo.file.name, imgError); yPos = addTextToPdf(`[Error adding image: ${photo.file.name}]`, margin, yPos); }
+                }
+            }
+            doc.save(`Report-${document.getElementById('job').value || 'Custom'}.pdf`);
+            if(statusEl) { statusEl.textContent = 'PDF generated successfully!'; statusEl.className = 'success'; }
+        } catch (error) { console.error("Error generating PDF:", error); if(statusEl) { statusEl.textContent = 'Error generating PDF. See console.'; statusEl.className = 'error'; } alert("Error generating PDF: " + error.message);
+        } finally { if(loader) loader.style.display = 'none'; setTimeout(() => { if(statusEl) statusEl.textContent = ''; }, 4000); }
+    }
+
+    async function compressImage(dataUrl, maxWidth, quality) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width;
+                let height = img.height;
+                if (width > maxWidth) {
+                    height = (maxWidth / width) * height;
+                    width = maxWidth;
+                }
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject;
+            img.src = dataUrl;
+        });
+    }
+
+
+    // --- PDF Modal Functions ---
+    async function renderPdfPage(pdfDoc, pageNum, canvas) {
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: 1.5 });
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport };
+        await page.render(renderContext).promise;
+    }
+
+    async function displayPdfPageInModal(pageNum) {
+        if (!loadedPdfDocument || pageNum < 1 || pageNum > loadedPdfDocument.numPages) return;
+        currentPageInView = pageNum;
+        const viewerContainer = document.getElementById('pdfViewerContainer');
+        if(!viewerContainer) return;
+        viewerContainer.innerHTML = ''; 
+        const canvas = document.createElement('canvas');
+        viewerContainer.appendChild(canvas);
+        const currentPageNumEl = document.getElementById('currentPageNum');
+        const totalPagesNumEl = document.getElementById('totalPagesNum');
+        const prevPageBtn = document.getElementById('prevPage');
+        const nextPageBtn = document.getElementById('nextPage');
+        if(currentPageNumEl) currentPageNumEl.textContent = currentPageInView;
+        if(totalPagesNumEl) totalPagesNumEl.textContent = loadedPdfDocument.numPages;
+        if(prevPageBtn) prevPageBtn.disabled = currentPageInView <= 1;
+        if(nextPageBtn) nextPageBtn.disabled = currentPageInView >= loadedPdfDocument.numPages;
+        try {
+            await renderPdfPage(loadedPdfDocument, currentPageInView, canvas);
+        } catch (error) {
+            console.error("Error rendering PDF page:", error);
+            viewerContainer.textContent = "Error rendering PDF page.";
+        }
+    }
+
+    function openPdfModal() { if (!loadedPdfDocument) { alert("Please upload a PDF file first."); return; } const modalEl = document.getElementById('pdfModal'); if(modalEl) { modalEl.style.display = 'flex'; history.pushState({pdfModalOpen: true}, "PDF Viewer", "#pdf"); } displayPdfPageInModal(currentPageInView); }
+    function closePdfModal(manageHistory = true) { const modalEl = document.getElementById('pdfModal'); if(modalEl) modalEl.style.display = 'none'; const viewerEl = document.getElementById('pdfViewerContainer'); if(viewerEl) viewerEl.innerHTML = ''; if (manageHistory && window.location.hash === "#pdf") { history.back(); }}
+    function closePdfModalWithHistory() { closePdfModal(true); }
+
+    // --- Clipboard and Utility Functions ---
+    function copyToClipboardNew() {
+        const outputEl = document.getElementById("output");
+        const textToCopy = outputEl ? outputEl.textContent : "";
+        if (!textToCopy) { alert("Please generate the report first."); return; }
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(textToCopy)
+                .then(() => alert("Report copied to clipboard!"))
+                .catch(err => { console.error("Async copy failed:", err); copyToClipboardFallback(); });
+        } else {
+            copyToClipboardFallback();
+        }
+    }
+
+    function copyToClipboardFallback() {
+        const outputEl = document.getElementById("output");
+        const textToCopy = outputEl ? outputEl.textContent : "";
+        if (!textToCopy) { return; }
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        textArea.style.position = "fixed";
+        textArea.style.top = "-9999px";
+        textArea.style.left = "-9999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            if (document.execCommand('copy')) alert('Report copied using old method!');
+            else alert('Old method copy failed.');
+        } catch (err) {
+            console.error("Fallback copy failed:", err);
+            alert('Old method copy failed.');
+        }
+        document.body.removeChild(textArea);
+    }
+
+    function selectText() {
+        const outputEl = document.getElementById("output");
+        if (!outputEl || outputEl.textContent === "") { alert("Please generate the report first."); return; }
+        const range = document.createRange();
+        range.selectNodeContents(outputEl);
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    function toggleDebug() {
+        const dbg = document.getElementById("debugText");
+        const toggle = document.getElementById("debugToggle");
+        if(!dbg || !toggle) return;
+        const isVisible = dbg.style.display === "block";
+        dbg.style.display = isVisible ? "none" : "block";
+        toggle.textContent = isVisible ? "Show Extracted PDF Text" : "Hide Extracted PDF Text";
+    }
+  </script>
+</body>
+</html>
