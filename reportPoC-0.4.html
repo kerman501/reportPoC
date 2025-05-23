@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Moving Report Generator - v5.3 (Hyperlinks & Refinements)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+
+  <style>
+    :root {
+      --company-pink: #f04e98;
+      --knicks-orange-accent: #f58426;
+      --knicks-blue-accent: #006bb6;
+      --text-light: #ffffff;
+      --danger-red: #dc3545;
+      --danger-red-light: #f8d7da;
+
+      /* Light Theme (Default) */
+      --primary-bg: #f4f6f8;
+      --secondary-bg: #ffffff;
+      --text-primary: #1f2937;
+      --text-secondary: #4b5563;
+      --border-color: #d1d5db;
+      --input-bg: #ffffff;
+      --input-text: #1f2937;
+      --input-border: #ccc;
+      --status-initial-bg: #f3f4f6; --status-initial-border: #9ca3af;
+      --status-pdf-bg: #d1fae5; --status-pdf-border: #10b981;
+      --status-user-bg: #dbeafe; --status-user-border: var(--knicks-blue-accent);
+      --status-attention-bg: #fffbeb; --status-attention-border: var(--knicks-orange-accent);
+      --button-secondary-bg: #6b7280; --button-secondary-hover-bg: #4b5563;
+      --debug-bg: #f9fafb; --debug-border: #e5e7eb;
+      --modal-content-bg: #ffffff; --modal-viewer-bg: #e9ecef;
+      --modal-header-border: #eee; --modal-text: #333;
+      --loader-color: var(--company-pink);
+      --header-bg: #ffffff;
+    }
+
+    html.dark-mode {
+      --primary-bg: #1a202c; --secondary-bg: #2d3748;
+      --text-primary: #e2e8f0; --text-secondary: #a0aec0;
+      --border-color: #4a5568; --input-bg: #2d3748;
+      --input-text: #e2e8f0; --input-border: #4a5568;
+      --status-initial-bg: #3e4c5f; --status-initial-border: #718096;
+      --status-pdf-bg: #2f5944; --status-pdf-border: #38a169;
+      --status-user-bg: #2c5282;
+      --status-attention-bg: #4c331a;
+      --button-secondary-bg: #5a6268; --button-secondary-hover-bg: #495057;
+      --debug-bg: #111722; --debug-border: var(--border-color);
+      --modal-content-bg: var(--secondary-bg); --modal-viewer-bg: var(--primary-bg);
+      --modal-header-border: var(--border-color); --modal-text: var(--text-primary);
+      --header-bg: #2d3748;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      padding: 20px; background-color: var(--primary-bg); color: var(--text-primary);
+      line-height: 1.6; margin: 0;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .app-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 15px 20px;
+        background-color: var(--header-bg);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-title-logo {
+        display: flex;
+        align-items: center;
+    }
+
+    .main-title {
+        font-size: 1.4em;
+        color: var(--company-pink);
+        margin: 0;
+        font-weight: 700;
+    }
+     @media (max-width: 600px) {
+        .main-title {
+            font-size: 1.2em;
+        }
+        .app-header {
+            padding: 10px 15px;
+        }
+        .field-group {
+            flex-wrap: wrap; /* Allow wrapping on small screens for the top fields */
+        }
+        .field-group > div {
+            min-width: 100%; /* Make fields stack on very small screens if needed */
+            flex-basis: 100%;
+        }
+        .field-group > div.half-width {
+             min-width: calc(50% - 7.5px);
+             flex-basis: calc(50% - 7.5px);
+        }
+    }
+
+    h2 { color: var(--text-primary); border-bottom: 1px solid var(--company-pink); padding-bottom: 5px; margin-top:0; margin-bottom: 15px; }
+
+    select, input[type="text"], input[type="number"], input[type="file"], textarea {
+      width: 100%; padding: 10px; font-size: 16px; margin-top: 5px;
+      background-color: var(--input-bg); color: var(--input-text);
+      border: 1px solid var(--input-border); border-radius: 4px; box-sizing: border-box;
+      transition: border-color 0.3s ease, background-color 0.3s ease, border-left-color 0.3s ease;
+      border-left-width: 4px;
+    }
+    input[type="file"] { padding: 6px; }
+    textarea { resize: vertical; min-height: 80px; }
+    #generatedHyperlinkOutput {min-height: 60px; background-color: var(--primary-bg); }
+    .no-comment-input { margin-top: 8px; min-height: 60px; }
+    label { display: block; margin-top: 15px; font-weight: 600; color: var(--text-secondary); }
+    input[type="checkbox"] { width: auto; margin-right: 8px; vertical-align: middle; }
+    label.checkbox-label { display: inline-block; margin-top: 15px; font-weight: normal; color: var(--text-primary); cursor: pointer; }
+
+
+    .field-group { display: flex; flex-wrap: nowrap; gap: 15px; align-items: flex-start; }
+    .field-group > div { flex: 1; min-width: 150px; }
+    .field-group > div.double-width { flex-grow: 2; }
+    .field-group > div.half-width { flex-grow: 0.5; flex-basis: calc(50% - 7.5px); min-width: 120px; }
+
+
+    .field-initial-default { background-color: var(--status-initial-bg); border-left-color: var(--status-initial-border); }
+    .field-pdf-informed { background-color: var(--status-pdf-bg); border-left-color: var(--status-pdf-border); }
+    .field-user-modified { background-color: var(--status-user-bg); border-left-color: var(--status-user-border); }
+    .field-requires-attention { background-color: var(--status-attention-bg) !important; border-left-color: var(--status-attention-border) !important; font-weight: 500; }
+
+    button { margin-top: 20px; padding: 12px 20px; font-size: 16px; font-weight: 600; margin-right: 10px; background-color: var(--company-pink); color: white; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s ease, transform 0.1s ease, filter 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;}
+    button:hover { filter: brightness(1.1); }
+    button:active { transform: scale(0.98); }
+    button.secondary { background-color: var(--button-secondary-bg); }
+    button.secondary:hover { filter: brightness(0.9); }
+
+    button.emphasized { padding: 14px 22px; font-size: 17px; }
+    button.emphasized svg { width: 1.1em; height: 1.1em; }
+
+
+    #viewPdfBtn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1040; background-color: var(--company-pink); box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 0; padding: 10px 15px; border-radius: 50px; }
+    #viewPdfBtn:hover { filter: brightness(1.15); }
+
+    pre { white-space: pre-wrap; word-wrap: break-word; background: var(--secondary-bg); color: var(--text-primary); padding: 15px; border: 1px solid var(--border-color); border-radius: 4px; margin-top: 20px; max-height: 400px; overflow-y: auto; }
+    #pdfStatus { color: #48bb78; margin-top: 5px; font-size: 0.9em;}
+    #pdfGenerateStatus, #sheetDataStatus { min-height: 20px; margin-top:10px; font-weight: 500;}
+    #pdfGenerateStatus.success, #sheetDataStatus.success { color: #48bb78; }
+    #pdfGenerateStatus.error, #sheetDataStatus.error { color: #fc8181; }
+
+    #debugToggle { cursor: pointer; font-size: 14px; margin-top: 15px; color: var(--knicks-blue-accent); text-decoration: underline; display: block; }
+    #debugText { display: none; background: var(--debug-bg); border-color: var(--debug-border); color: var(--text-primary); }
+
+    .report-section { margin-bottom: 20px; padding: 20px; background: var(--secondary-bg); border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: background-color 0.3s ease, border-color 0.3s ease;}
+    .question-item, .sheet-data-item { margin-bottom: 15px; }
+    .no-comment-container { margin-top: 5px; padding-left: 10px; border-left: 3px solid var(--knicks-orange-accent); }
+
+    .modal { display: none; position: fixed; z-index: 1050; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
+    .modal-content { background-color: var(--modal-content-bg); color: var(--modal-text); margin: auto; padding:0; border: 1px solid var(--border-color); width: 90%; max-width: 800px; border-radius: 8px; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 1px solid var(--modal-header-border); flex-shrink: 0; }
+    .modal-header h3 { margin: 0; color: var(--company-pink); font-size: 1.1em; }
+    .modal-close-button-fixed { color: var(--text-secondary); font-size: 28px; font-weight: bold; cursor: pointer; background: none; border: none; padding: 0 5px; line-height: 1; }
+    .modal-close-button-fixed:hover { color: var(--text-primary); }
+    #pdfViewerContainer { width:100%; flex-grow: 1; overflow-y: auto; background: var(--modal-viewer-bg); padding:5px; text-align:center; }
+    #pdfViewerContainer canvas { margin-bottom: 10px; box-shadow: 0 0 8px rgba(0,0,0,0.15); max-width: 100%; height: auto !important; background-color: white; }
+    .pdf-page-navigation { text-align: center; padding: 8px 0; background-color: var(--secondary-bg); border-top: 1px solid var(--border-color); flex-shrink: 0;}
+    .pdf-page-navigation button { margin: 0 5px; padding: 8px 12px; font-size: 14px; margin-top:0; background-color: var(--company-pink); color:white; }
+    .pdf-page-navigation button:disabled { background-color: #5a6268; cursor: not-allowed;}
+    .pdf-page-navigation span { color: var(--text-primary); }
+
+    .output-group { margin-top: 15px; }
+    .output-group label { font-size: 0.9em; color: var(--text-secondary); }
+    .output-group textarea { min-height: 60px; background-color: var(--primary-bg); border-color: var(--border-color); margin-top: 2px;}
+
+    .theme-switch-wrapper { display: flex; align-items: center; background-color: var(--secondary-bg); padding: 8px 12px; border-radius: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .theme-switch-wrapper label { margin: 0 8px 0 0; color: var(--text-primary); font-size: 0.85em; line-height: 1; }
+    .theme-switch { display: inline-block; height: 22px; position: relative; width: 40px; }
+    .theme-switch input { display:none; }
+    .slider { background-color: #ccc; bottom: 0; cursor: pointer; left: 0; position: absolute; right: 0; top: 0; transition: .4s; border-radius: 22px; }
+    .slider:before { background-color: #fff; bottom: 3px; content: ""; height: 16px; left: 3px; position: absolute; transition: .4s; width: 16px; border-radius: 50%; }
+    input:checked + .slider { background-color: var(--company-pink); }
+    input:checked + .slider:before { transform: translateX(18px); }
+
+    #photoSection { margin-top: 20px; }
+    .photo-upload-label {
+        display: block; padding: 10px 15px; background-color: var(--knicks-blue-accent);
+        color: var(--text-light); border-radius: 4px; text-align: center; cursor: pointer;
+        margin-bottom: 10px; font-weight: 600;
+    }
+    .photo-upload-label:hover { filter: brightness(1.1); }
+    #photoUpload { display: none; }
+
+    #photoPreviews {
+        display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+        border: 1px dashed var(--border-color); padding: 8px; min-height: 50px; border-radius: 4px;
+        align-items: flex-start;
+    }
+    .photo-preview-item {
+        position: relative; border: 1px solid var(--border-color); padding: 5px; border-radius: 4px;
+        background-color: var(--secondary-bg); display: flex; flex-direction: column;
+        width: 120px;
+        max-width: 120px;
+        box-sizing: border-box;
+        height: auto;
+    }
+    .photo-preview-item.comments-enabled {
+        width: 180px;
+        max-width: 180px;
+    }
+
+    @media (max-width: 480px) { /* Small screens */
+        .photo-preview-item,
+        .photo-preview-item.comments-enabled {
+            width: calc(50% - 4px);
+            max-width: none;
+        }
+    }
+
+    .photo-preview-item img { max-width: 100%; height: auto; display: block; border-radius: 2px; margin-bottom: 5px; object-fit: cover; max-height: 100px; }
+    .photo-preview-item.comments-enabled img { max-height: 150px; }
+
+    .photo-preview-item .delete-photo {
+        position: absolute; top: -8px; right: -8px; background: var(--danger-red); color: white;
+        border: 1px solid white; border-radius: 50%; width: 24px; height: 24px;
+        font-size: 12px; line-height: 22px; text-align: center; cursor: pointer; font-weight: bold;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2); display: flex; align-items: center; justify-content: center;
+    }
+    .delete-photo svg { width: 14px; height: 14px; fill: white;} /* Adjusted for X icon */
+    .delete-photo:hover { background: #c82333; }
+
+    .photo-comment-textarea {
+        width: 100%; font-size: 12px; padding: 6px; margin-top: auto;
+        min-height: 40px; box-sizing: border-box; border: 1px solid var(--input-border); border-radius: 3px;
+        background-color: var(--input-bg); color: var(--input-text);
+        display: none;
+    }
+    .photo-preview-item.comments-enabled .photo-comment-textarea {
+        display: block;
+    }
+
+
+    .loader { border: 5px solid var(--input-bg); border-top: 5px solid var(--loader-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; display: none; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+    .button-container { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color); }
+    .hyperlink-config-section { margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-title-logo">
+        <h1 class="main-title">Moving Report Generator</h1>
+    </div>
+    <div class="theme-switch-wrapper">
+      <label for="themeToggle">Dark</label>
+      <label class="theme-switch">
+        <input type="checkbox" id="themeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
+  </header>
+
+  <div style="padding: 0 20px;">
+
+    <div class="report-section">
+        <div class="field-group">
+            <div class="double-width">
+                <label for="clientName">• Client Name:</label>
+                <input type="text" id="clientName" placeholder="Enter client's name">
+            </div>
+            <div class="double-width">
+                <label for="job">• Job number:</label>
+                <input type="text" id="job" placeholder="Enter job number e.g., ###### (Lead ID)">
+            </div>
+            <div class="half-width">
+                <label for="cuFt">• CuFt:</label>
+                <input type="text" id="cuFt" placeholder="e.g., 3,655.00 or 674 (Volume)">
+            </div>
+        </div>
+         <div>
+            <label for="pdfFile" style="margin-top: 15px;">Upload PDF Inventory:</label>
+            <input type="file" id="pdfFile" accept="application/pdf">
+            <div id="pdfStatus"></div>
+        </div>
+    </div>
+
+
+    <div id="fields" class="report-section">
+      <h2>Report Details</h2>
+    </div>
+
+    <div class="report-section">
+      <label for="generalComments">Additional General Comments:</label>
+      <textarea id="generalComments" rows="3" placeholder="Enter any other comments here"></textarea>
+    </div>
+
+    <div class="report-section" id="photoSection">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h2>Attach Photos for PDF Report</h2>
+        <div>
+            <input type="checkbox" id="enablePhotoCommentsToggle">
+            <label for="enablePhotoCommentsToggle" class="checkbox-label">Enable Photo Comments</label>
+        </div>
+      </div>
+      <label for="photoUpload" class="photo-upload-label">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-camera-fill" viewBox="0 0 16 16">
+            <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+            <path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m9-1a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0"/>
+        </svg>
+        Choose Files
+      </label>
+      <input type="file" id="photoUpload" accept="image/*" multiple title="Select photos to include in PDF">
+      <div id="photoPreviews"></div>
+    </div>
+
+    <div class="report-section">
+      <label for="rating">Rating (1.0 - 5.0):</label>
+      <input type="number" id="rating" value="4.0" min="1" max="5" step="0.1" placeholder="e.g., 4.5">
+    </div>
+
+    <div class="button-container report-section">
+        <button id="generatePdfWithPhotosBtnMain" class="emphasized" onclick="generatePdfWithPhotos()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
+              <path d="M5.523 12.424q.21-.124.459-.238a8 8 0 0 1-.45.606q-.24.238-.45.458a1.18 1.18 0 0 1-.732.056q-.375-.075-.666-.363a1.18 1.18 0 0 1-.336-.666q.03-.366.396-.666a1 1 0 0 1 .459-.45q.21-.124.459-.238c.143-.082.291-.16.459-.238m2.591-1.683q.18.18.348.354a1.2 1.2 0 0 1 .132.58q-.03.322-.258.543a1.18 1.18 0 0 1-.706.24q-.336 0-.55-.164a1.2 1.2 0 0 1-.249-.555q.007-.34.24-.596a1.2 1.2 0 0 1 .517-.375q.21-.075.412-.075h.011q.156 0 .336.069ZM8 5.5a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1"/>
+              <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2.5a1 1 0 0 0 1 1h2.5zM1.803 10.852q.27-.27.51-.435a1.8 1.8 0 0 1 .635-.174q.426 0 .744.164.32.165.5.426.182.26.182.576 0 .323-.198.596a1.6 1.6 0 0 1-.533.417q-.27.164-.602.164a2 2 0 0 1-.618-.124q-.258-.124-.48-.354a1.8 1.8 0 0 1-.282-.618q-.055-.23-.055-.465 0-.218.068-.417m3.608-2.09a1.3 1.3 0 0 1 .018.255q0 .336-.132.606a1 1 0 0 1-.455.435q-.29.158-.63.158a1.6 1.6 0 0 1-.66-.147q-.282-.147-.48-.426a1.4 1.4 0 0 1-.158-.666q.03-.381.29-.643a1.5 1.5 0 0 1 .533-.375q.27-.102.577-.102.27 0 .503.093a1.2 1.2 0 0 1 .384.311M9.06 10.073h.01a1.4 1.4 0 0 1 .49.069q.225.069.408.206a1.1 1.1 0 0 1 .306.396q.132.26.132.56a1 1 0 0 1-.147.543q-.147.249-.455.408a1.8 1.8 0 0 1-.666.164q-.408 0-.69-.147a1.5 1.5 0 0 1-.489-.435q-.164-.282-.164-.586a1.4 1.4 0 0 1 .14-.596q.14-.27.384-.45ZM13 12H9.5v1.5h.75v-1h2v1h.75zm-3.74-5.362h.01a1.4 1.4 0 0 1 .231.021q.195.021.37.062a1.1 1.1 0 0 1 .273.124q.15.082.273.182.124.102.21.225a1 1 0 0 1 .105.249q.041.124.041.266 0 .26-.082.476a1.3 1.3 0 0 1-.231.396q-.147.158-.348.266a1.5 1.5 0 0 1-.465.164q-.21.021-.426.021a1.3 1.3 0 0 1-.45-.078q-.21-.078-.369-.216a1 1 0 0 1-.225-.336q-.082-.182-.082-.37V7.5a.5.5 0 0 1 .5-.5h.5Zm2.738 2.437a1 1 0 0 1 .348-.776q.21-.21.51-.336a2.1 2.1 0 0 1 .803-.174q.45 0 .81.147.36.147.567.417.209.27.209.596a1.5 1.5 0 0 1-.174.716q-.174.282-.48.45a2.2 2.2 0 0 1-.716.238q-.225.021-.45.021a2.5 2.5 0 0 1-.9-.174 1.8 1.8 0 0 1-.617-.48q-.174-.26-.226-.51-.051-.249-.051-.476Z"/>
+            </svg>
+            Generate PDF with Report & Photos
+        </button>
+        <div id="pdfGenerateLoader" class="loader"></div>
+        <div id="pdfGenerateStatus"></div>
+    </div>
+
+
+    <div class="report-section">
+        <h2>Data for Google Sheets Cell</h2>
+        <div class="sheet-data-item">
+        <label for="sheetWarehouse">Warehouse:</label>
+        <select id="sheetWarehouse">
+            <option value="">Select Warehouse</option>
+            <option value="Masp1">Masp1</option>
+            <option value="Masp2">Masp2</option>
+            <option value="Masp3">Masp3</option>
+            <option value="Masp4">Masp4</option>
+            <option value="TRAF">TRAF</option>
+            <option value="LIC">LIC</option>
+            <option value="SKIL">SKIL</option>
+            <option value="BRON">BRON</option>
+            <option value="WTPL">WTPL</option>
+            <option value="ROS">ROS</option>
+            <option value="HALE">HALE</option>
+            <option value="PASS">PASS</option>
+            <option value="OtherWH">Other (Specify)</option>
+        </select>
+        </div>
+        <div class="sheet-data-item">
+            <input type="checkbox" id="useLoadingDock" style="margin-top: 10px;">
+            <label for="useLoadingDock" class="checkbox-label">Use "loading dock" for Address</label>
+            <label for="sheetAddress" style="margin-top: 5px;">Location/Address (e.g., A23R):</label>
+            <input type="text" id="sheetAddress" placeholder="e.g., A23R or Street Address">
+        </div>
+        <div class="sheet-data-item">
+        <label for="sheetPallets">Pallets:</label>
+        <input type="number" id="sheetPallets" placeholder="e.g., 2" min="0">
+        </div>
+        <div class="sheet-data-item">
+        <label for="sheetItems">Items:</label>
+        <input type="number" id="sheetItems" placeholder="e.g., 20" min="0">
+        <small id="pdfItemCount" style="color:var(--text-secondary); display:block; margin-top:3px;"></small>
+        </div>
+        <div class="sheet-data-item">
+        <label for="sheetEmployeeName">Employee Name:</label>
+        <input type="text" id="sheetEmployeeName" placeholder="Your Name">
+        </div>
+        <div class="sheet-data-item">
+            <input type="checkbox" id="sheetBingoStatusOK" checked>
+            <label for="sheetBingoStatusOK" class="checkbox-label">Inventory OK (Bingo)?</label>
+            <div id="sheetBingoDetailsContainer" style="display:none; margin-top:5px;">
+                <label for="sheetBingoDetails">Bingo Issues (e.g., #34v, #3m):</label>
+                <input type="text" id="sheetBingoDetails" placeholder="#ID void/missing">
+            </div>
+        </div>
+        <div class="sheet-data-item">
+        <label>Materials (approx. from PDF, please verify):</label>
+        <div>
+            TV Boxes: <input type="number" id="sheetMatTV" placeholder="0" min="0" style="width: 60px; margin-right:10px;">
+            Wardrobes: <input type="number" id="sheetMatWR" placeholder="0" min="0" style="width: 60px; margin-right:10px;">
+            Blankets: <input type="number" id="sheetMatBL" placeholder="0" min="0" style="width: 60px;">
+            <small id="pdfMaterialCounts" style="color:var(--text-secondary); display:block; margin-top:3px;"></small>
+        </div>
+        </div>
+        <div class="output-group">
+            <label for="sheetOutputString">Formatted String for Google Sheets:</label>
+            <textarea id="sheetOutputString" readonly rows="2"></textarea>
+            <div style="margin-top:10px; display: flex; flex-wrap:wrap; gap:10px; align-items: center;">
+                <button onclick="copySheetString()" style="margin-top:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clipboard-check" viewBox="0 0 16 16">
+                      <path fill-rule="evenodd" d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0"/>
+                      <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"/>
+                      <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"/>
+                    </svg>
+                    Copy Sheet String
+                </button>
+                <button id="generatePdfWithPhotosBtnSheet" class="emphasized" onclick="generatePdfWithPhotos()" style="margin-top:0;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf-fill" viewBox="0 0 16 16">
+                      <path d="M5.523 12.424q.21-.124.459-.238a8 8 0 0 1-.45.606q-.24.238-.45.458a1.18 1.18 0 0 1-.732.056q-.375-.075-.666-.363a1.18 1.18 0 0 1-.336-.666q.03-.366.396-.666a1 1 0 0 1 .459-.45q.21-.124.459-.238c.143-.082.291-.16.459-.238m2.591-1.683q.18.18.348.354a1.2 1.2 0 0 1 .132.58q-.03.322-.258.543a1.18 1.18 0 0 1-.706.24q-.336 0-.55-.164a1.2 1.2 0 0 1-.249-.555q.007-.34.24-.596a1.2 1.2 0 0 1 .517-.375q.21-.075.412-.075h.011q.156 0 .336.069ZM8 5.5a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2H9a1 1 0 0 1-1-1"/>
+                      <path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2.5a1 1 0 0 0 1 1h2.5zM1.803 10.852q.27-.27.51-.435a1.8 1.8 0 0 1 .635-.174q.426 0 .744.164.32.165.5.426.182.26.182.576 0 .323-.198.596a1.6 1.6 0 0 1-.533.417q-.27.164-.602.164a2 2 0 0 1-.618-.124q-.258-.124-.48-.354a1.8 1.8 0 0 1-.282-.618q-.055-.23-.055-.465 0-.218.068-.417m3.608-2.09a1.3 1.3 0 0 1 .018.255q0 .336-.132.606a1 1 0 0 1-.455.435q-.29.158-.63.158a1.6 1.6 0 0 1-.66-.147q-.282-.147-.48-.426a1.4 1.4 0 0 1-.158-.666q.03-.381.29-.643a1.5 1.5 0 0 1 .533-.375q.27-.102.577-.102.27 0 .503.093a1.2 1.2 0 0 1 .384.311M9.06 10.073h.01a1.4 1.4 0 0 1 .49.069q.225.069.408.206a1.1 1.1 0 0 1 .306.396q.132.26.132.56a1 1 0 0 1-.147.543q-.147.249-.455.408a1.8 1.8 0 0 1-.666.164q-.408 0-.69-.147a1.5 1.5 0 0 1-.489-.435q-.164-.282-.164-.586a1.4 1.4 0 0 1 .14-.596q.14-.27.384-.45ZM13 12H9.5v1.5h.75v-1h2v1h.75zm-3.74-5.362h.01a1.4 1.4 0 0 1 .231.021q.195.021.37.062a1.1 1.1 0 0 1 .273.124q.15.082.273.182.124.102.21.225a1 1 0 0 1 .105.249q.041.124.041.266 0 .26-.082.476a1.3 1.3 0 0 1-.231.396q-.147.158-.348.266a1.5 1.5 0 0 1-.465.164q-.21.021-.426.021a1.3 1.3 0 0 1-.45-.078q-.21-.078-.369-.216a1 1 0 0 1-.225-.336q-.082-.182-.082-.37V7.5a.5.5 0 0 1 .5-.5h.5Zm2.738 2.437a1 1 0 0 1 .348-.776q.21-.21.51-.336a2.1 2.1 0 0 1 .803-.174q.45 0 .81.147.36.147.567.417.209.27.209.596a1.5 1.5 0 0 1-.174.716q-.174.282-.48.45a2.2 2.2 0 0 1-.716.238q-.225.021-.45.021a2.5 2.5 0 0 1-.9-.174 1.8 1.8 0 0 1-.617-.48q-.174-.26-.226-.51-.051-.249-.051-.476Z"/>
+                    </svg>
+                    Generate PDF
+                </button>
+            </div>
+            <div id="sheetDataStatus"></div>
+        </div>
+        <button id="resetSheetDataBtn" onclick="resetSheetDataForm()" class="secondary" style="margin-top:10px;">Reset Sheet Data Fields</button>
+    </div>
+
+    <div id="debugToggle" onclick="toggleDebug()">Show Extracted PDF Text</div>
+    <pre id="debugText"></pre>
+
+    <button id="viewPdfBtn" onclick="openPdfModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-fill" viewBox="0 0 16 16">
+          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+          <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+        </svg> View PDF
+    </button>
+
+    <div id="pdfModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Uploaded PDF Document</h3>
+          <span class="modal-close-button-fixed" onclick="closePdfModalWithHistory()" title="Close PDF Viewer">&times;</span>
+        </div>
+        <div id="pdfViewerContainer"></div>
+        <div class="pdf-page-navigation">
+          <button id="prevPage">Previous</button>
+          <span>Page <span id="currentPageNum">0</span> of <span id="totalPagesNum">0</span></span>
+          <button id="nextPage">Next</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="report-section hyperlink-config-section">
+        <h2>Hyperlink Configuration for Google Sheets</h2>
+        <div class="sheet-data-item">
+            <label for="spreadsheetIdInput">Spreadsheet ID:</label>
+            <input type="text" id="spreadsheetIdInput" placeholder="Enter Google Spreadsheet ID">
+        </div>
+        <div class="sheet-data-item">
+            <label for="sheetNameInput">Sheet Name (e.g., MM/DD/YYYY):</label>
+            <input type="text" id="sheetNameInput" placeholder="Enter Sheet Name (current date auto-filled)">
+        </div>
+        <div class="sheet-data-item">
+            <label for="currentRowInput">Current Row Number in Sheet:</label>
+            <input type="number" id="currentRowInput" value="6" min="1" placeholder="Enter row number">
+        </div>
+        <button onclick="generateHyperlinkForSheet()">Generate Hyperlink for Current Row</button>
+        <div class="output-group" style="margin-top: 10px;">
+            <label for="generatedHyperlinkOutput">Generated Hyperlink (copy this to Google Sheets):</label>
+            <textarea id="generatedHyperlinkOutput" readonly rows="3"></textarea>
+        </div>
+    </div>
+
+  </div>
+  <script>
+    if (typeof pdfjsLib === 'undefined') {
+        console.error("PDF.js library is not loaded!");
+    } else {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+    }
+    if (typeof jspdf === 'undefined') {
+        console.error("jsPDF library is not loaded!");
+    }
+
+    let loadedPdfDocument = null;
+    let currentPageInView = 1;
+    const attentionFieldIds = ['wooden'];
+    const sheetDataInputIds = ['sheetWarehouse', 'sheetAddress', 'sheetPallets', 'sheetItems', 'sheetEmployeeName', 'sheetBingoStatusOK', 'sheetBingoDetails', 'sheetMatTV', 'sheetMatWR', 'sheetMatBL', 'useLoadingDock'];
+    let selectedPhotos = [];
+
+    const questions = [
+      { id: "sofa", text: "Sofa is full shrinked and wrapped in blankets:", options: ["YES", "NO", "NO SOFA"], itemName: "Sofa" },
+      { id: "mattress", text: "Mattress in box, full shrinked and wrapped in blankets:", options: ["YES", "NO", "NO MATTRESS"], itemName: "Mattress" },
+      { id: "wardrobe", text: "Wardrobe with only clothes/pillows inside:", options: ["YES", "NO", "NO WARDROBE"], itemName: "Wardrobe" },
+      { id: "tvbox", text: "TV Box with only TV or Paintings inside:", options: ["YES", "NO", "NO TV BOX"], itemName: "TV Box" },
+      { id: "paintings", text: "Paintings or glass in TV Box are separated from each other by boxes:", options: ["YES", "NO", "NO PAINTING/GLASS"], itemName: "Paintings/Glass" },
+      { id: "corners", text: "Corners/Cardboard are placed on all furniture where required:", options: ["YES", "NO"], itemName: "Corners/Cardboard" },
+      { id: "wooden", text: "Wooden items are full wrapped in blankets:", options: ["YES", "NO", "NO WOODEN PARTS"], itemName: "Wooden Items" },
+      { id: "leather", text: "Leather items are wrapped in blankets without shrink:", options: ["YES", "NO", "NO LEATHER ITEMS"], itemName: "Leather Items" },
+      { id: "suitcases", text: "Suitcases are full shrinked:", options: ["YES", "NO", "NO SUITCASES"], itemName: "Suitcases" },
+      { id: "lamps", text: "Lamps in Boxes/Bubble wrap:", options: ["YES", "NO", "NO LAMPS"], itemName: "Lamps" },
+      { id: "bikes", text: "Bicycle/Peloton is full wrapped in blankets:", options: ["YES", "NO", "NO BIKES"], itemName: "Bicycle/Peloton" },
+      { id: "rugs", text: "Rugs/Carpets are full shrinked:", options: ["YES", "NO", "NO RUGS"], itemName: "Rugs/Carpets" },
+      { id: "hardware", text: "Hardware Box:", options: ["YES", "NO"], itemName: "Hardware Box" }
+    ];
+    const defaultValuesConfig = {
+      sofa: "NO SOFA", mattress: "NO MATTRESS", wardrobe: "NO WARDROBE", tvbox: "NO TV BOX",
+      paintings: "NO PAINTING/GLASS", corners: "YES", wooden: "YES", leather: "NO LEATHER ITEMS",
+      suitcases: "NO SUITCASES", lamps: "NO LAMPS", bikes: "NO BIKES", rugs: "NO RUGS",
+      hardware: "YES"
+    };
+    const keywordMap = {
+        sofa: ["sofa", "couch", "ottoman", "loveseat", "settee", "sectional", "sofa bed"],
+        mattress: ["mattress", "box spring", "boxspring"],
+        wardrobe: ["wardrobe", "wardrobe box", "armoire"],
+        tvbox: ["tv box", "tvbox"],
+        paintings: ["painting", "glass", "picture", "art", "canvas", "mirror"], leather: ["leather"],
+        suitcases: ["suitcase"], lamps: ["lamp"], bikes: ["bike", "bicycle", "peloton", "exercise bike"],
+        rugs: ["rug", "carpet"], hardware: ["hardware", "hardware box"]
+    };
+
+    const fieldContainer = document.getElementById("fields");
+    const allInputElementsForReset = [];
+
+    function applyCurrentTheme() { const themeToggleCheckbox = document.getElementById('themeToggle'); const savedTheme = localStorage.getItem('theme'); if (themeToggleCheckbox) { if (savedTheme === 'dark-mode') { document.documentElement.classList.add('dark-mode'); themeToggleCheckbox.checked = true; } else { document.documentElement.classList.remove('dark-mode'); themeToggleCheckbox.checked = false; if (!savedTheme) localStorage.setItem('theme', 'light-mode'); } } }
+    function setupThemeToggle() { const themeToggleCheckbox = document.getElementById('themeToggle'); if (themeToggleCheckbox) { themeToggleCheckbox.addEventListener('change', function() { if (this.checked) { document.documentElement.classList.add('dark-mode'); localStorage.setItem('theme', 'dark-mode'); } else { document.documentElement.classList.remove('dark-mode'); localStorage.setItem('theme', 'light-mode'); } }); } }
+
+    function applyAttentionHighlight(element) {
+        if (!element) return;
+        element.classList.remove('field-requires-attention');
+        if (attentionFieldIds.includes(element.id) && element.value === 'YES' && element.dataset.status !== 'user-modified') {
+            element.classList.add('field-requires-attention');
+        }
+    }
+
+    function setFieldStatus(element, status) {
+        if (!element) { return; }
+        element.classList.remove('field-initial-default', 'field-pdf-informed', 'field-user-modified', 'field-requires-attention');
+        if (status) element.classList.add(`field-${status}`);
+        element.dataset.status = status;
+        applyAttentionHighlight(element);
+    }
+
+    function getCurrentDateFormatted() {
+        const today = new Date();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        const year = today.getFullYear();
+        return `${month}/${day}/${year}`;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        applyCurrentTheme(); setupThemeToggle();
+        processUrlParameters(); // Process URL parameters on page load
+
+        const sheetNameInput = document.getElementById('sheetNameInput');
+        if (sheetNameInput && !sheetNameInput.value) { // Only set if not pre-filled by URL params
+            sheetNameInput.value = getCurrentDateFormatted();
+        }
+
+
+        if(fieldContainer) { questions.forEach(q => { const questionDiv = document.createElement("div"); questionDiv.className = "question-item"; const label = document.createElement("label"); label.htmlFor = q.id; label.textContent = "• " + q.text; questionDiv.appendChild(label); const select = document.createElement("select"); select.id = q.id; select.dataset.itemId = q.id; select.dataset.itemName = q.itemName; q.options.forEach(optText => { const o = document.createElement("option"); o.text = optText; o.value = optText; select.add(o); }); questionDiv.appendChild(select); allInputElementsForReset.push(select); const commentContainer = document.createElement("div"); commentContainer.id = `no_comment_container_${q.id}`; commentContainer.className = "no-comment-container"; commentContainer.style.display = "none"; const commentTextarea = document.createElement("textarea"); commentTextarea.id = `no_comment_textarea_${q.id}`; commentTextarea.className = "no-comment-input"; commentTextarea.placeholder = `Details for ${q.itemName} (NO)...`; commentContainer.appendChild(commentTextarea); questionDiv.appendChild(commentContainer); allInputElementsForReset.push(commentTextarea); fieldContainer.appendChild(questionDiv); select.addEventListener('change', (event) => { handleNoSelection(event); setFieldStatus(select, 'user-modified'); }); commentTextarea.addEventListener('input', () => { setFieldStatus(commentTextarea, 'user-modified'); }); if (defaultValuesConfig[q.id]) { select.value = defaultValuesConfig[q.id]; } setFieldStatus(select, 'initial-default'); setFieldStatus(commentTextarea, 'initial-default'); if (select.value === "NO") { select.dispatchEvent(new Event('change')); } }); }
+        ['clientName', 'job', 'cuFt', 'generalComments', 'rating'].forEach(id => { const element = document.getElementById(id); if (element) { allInputElementsForReset.push(element); const eventType = element.tagName === 'SELECT' || element.type === 'number' ? 'change' : 'input'; element.addEventListener(eventType, () => setFieldStatus(element, 'user-modified')); if (!element.value) {setFieldStatus(element, 'initial-default');} /* Preserve pre-filled status */ }});
+
+
+        const useLoadingDockCheckbox = document.getElementById('useLoadingDock');
+        const sheetAddressInput = document.getElementById('sheetAddress');
+        if (useLoadingDockCheckbox && sheetAddressInput) {
+            useLoadingDockCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    sheetAddressInput.value = 'loading dock';
+                    sheetAddressInput.disabled = true;
+                    setFieldStatus(sheetAddressInput, 'user-modified');
+                } else {
+                    sheetAddressInput.value = '';
+                    sheetAddressInput.disabled = false;
+                    setFieldStatus(sheetAddressInput, 'initial-default');
+                }
+                updateSheetOutputString();
+            });
+        }
+
+        sheetDataInputIds.forEach(id => { const element = document.getElementById(id); if (element) { element.addEventListener('input', updateSheetOutputString); element.addEventListener('change', updateSheetOutputString); if (id === 'sheetEmployeeName' || id === 'sheetWarehouse') { element.addEventListener('change', saveSheetDataToLocalStorage); } }});
+        const bingoCheckboxInit = document.getElementById('sheetBingoStatusOK'); if(bingoCheckboxInit) {bingoCheckboxInit.addEventListener('change', function() { const detailsContainer = document.getElementById('sheetBingoDetailsContainer'); const detailsInput = document.getElementById('sheetBingoDetails'); if(detailsContainer) detailsContainer.style.display = this.checked ? 'none' : 'block'; if (this.checked && detailsInput) { detailsInput.value = ''; } updateSheetOutputString(); });}
+        loadSheetDataFromLocalStorage(); updateSheetOutputString();
+        const bingoStatusElInit = document.getElementById('sheetBingoStatusOK'); const bingoDetailsContainerElInit = document.getElementById('sheetBingoDetailsContainer'); if(bingoStatusElInit && bingoDetailsContainerElInit) {bingoDetailsContainerElInit.style.display = !bingoStatusElInit.checked ? 'block' : 'none';}
+
+        const pdfFileInput = document.getElementById("pdfFile"); if (pdfFileInput) { pdfFileInput.addEventListener("change", handlePdfFileChange); }
+        const photoUploadEl = document.getElementById('photoUpload'); if (photoUploadEl) { photoUploadEl.addEventListener('change', handlePhotoUpload); }
+        const enablePhotoCommentsToggle = document.getElementById('enablePhotoCommentsToggle'); if (enablePhotoCommentsToggle) { enablePhotoCommentsToggle.addEventListener('change', togglePhotoCommentFields); }
+
+        window.addEventListener('popstate', function(event) { const pdfModal = document.getElementById('pdfModal'); if (pdfModal && pdfModal.style.display === 'flex' && event.state && event.state.pdfModalOpen) { closePdfModal(false); }});
+        const prevPageBtn = document.getElementById('prevPage'); if(prevPageBtn) prevPageBtn.addEventListener('click', () => { if (currentPageInView > 1) displayPdfPageInModal(currentPageInView - 1); });
+        const nextPageBtn = document.getElementById('nextPage'); if(nextPageBtn) nextPageBtn.addEventListener('click', () => { if (loadedPdfDocument && currentPageInView < loadedPdfDocument.numPages) displayPdfPageInModal(currentPageInView + 1); });
+    });
+
+    function processUrlParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+
+        const spreadsheetIdFromUrl = urlParams.get('spreadsheetId');
+        const sheetNameFromUrl = urlParams.get('sheetName');
+        const rowFromUrl = urlParams.get('row');
+        const leadIdFromUrl = urlParams.get('leadId');
+        const customerNameFromUrl = urlParams.get('customerName');
+        const volumeFromUrl = urlParams.get('volume');
+
+        if (spreadsheetIdFromUrl) {
+            const el = document.getElementById('spreadsheetIdInput');
+            if (el) el.value = spreadsheetIdFromUrl;
+        }
+        if (sheetNameFromUrl) {
+            const el = document.getElementById('sheetNameInput');
+            if (el) el.value = sheetNameFromUrl;
+        }
+        if (rowFromUrl) {
+            const el = document.getElementById('currentRowInput');
+            if (el) el.value = rowFromUrl;
+        }
+        if (leadIdFromUrl) {
+            const el = document.getElementById('job');
+            if (el) { el.value = leadIdFromUrl; setFieldStatus(el, 'pdf-informed'); }
+        }
+        if (customerNameFromUrl) {
+            const el = document.getElementById('clientName');
+            if (el) { el.value = customerNameFromUrl; setFieldStatus(el, 'pdf-informed');}
+        }
+        if (volumeFromUrl) {
+            const el = document.getElementById('cuFt');
+            if (el) { el.value = volumeFromUrl; setFieldStatus(el, 'pdf-informed');}
+        }
+
+        // Optionally, clear parameters from URL to prevent re-processing on refresh
+        // Be cautious with this if you rely on parameters for other things or during development.
+        // window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    }
+
+    function generateHyperlinkForSheet() {
+        const baseUrl = window.location.href.split('?')[0]; // Get base URL without existing params
+        const spreadsheetId = document.getElementById('spreadsheetIdInput').value;
+        const sheetName = document.getElementById('sheetNameInput').value;
+        const currentRow = document.getElementById('currentRowInput').value;
+
+        const leadId = document.getElementById('job').value;
+        const customerName = document.getElementById('clientName').value;
+        const volume = document.getElementById('cuFt').value;
+
+        if (!spreadsheetId || !sheetName || !currentRow) {
+            alert("Please fill in Spreadsheet ID, Sheet Name, and Current Row Number.");
+            return;
+        }
+
+        const params = new URLSearchParams();
+        params.append('spreadsheetId', spreadsheetId);
+        params.append('sheetName', sheetName);
+        params.append('row', currentRow);
+        if (leadId) params.append('leadId', leadId);
+        if (customerName) params.append('customerName', customerName);
+        if (volume) params.append('volume', volume);
+
+        const hyperlink = `${baseUrl}?${params.toString()}`;
+        document.getElementById('generatedHyperlinkOutput').value = hyperlink;
+        // alert("Hyperlink generated and displayed below. Formula for Google Sheets:\n" +
+        //       `=HYPERLINK("${hyperlink}", "Open Job ${leadId || ''} in App")`);
+    }
+
+
+    function togglePhotoCommentFields() {
+        const photoPreviewsContainer = document.getElementById('photoPreviews');
+        const isEnabled = document.getElementById('enablePhotoCommentsToggle').checked;
+        if (photoPreviewsContainer) {
+            const items = photoPreviewsContainer.getElementsByClassName('photo-preview-item');
+            for (let item of items) {
+                if (isEnabled) {
+                    item.classList.add('comments-enabled');
+                } else {
+                    item.classList.remove('comments-enabled');
+                }
+            }
+        }
+    }
+
+
+    function handleNoSelection(event) {
+        const selectElement = event.target;
+        const itemId = selectElement.dataset.itemId;
+        const itemName = selectElement.dataset.itemName;
+        const commentContainer = document.getElementById(`no_comment_container_${itemId}`);
+        const commentTextarea = document.getElementById(`no_comment_textarea_${itemId}`);
+        const noCommentTemplate = `${itemName} (NO): `;
+        if (selectElement.value === "NO") {
+            if (commentTextarea && (commentTextarea.value.trim() === "" || commentTextarea.dataset.status !== 'user-modified')) {
+                commentTextarea.value = noCommentTemplate;
+            }
+            if(commentContainer) commentContainer.style.display = "block";
+        } else {
+            if(commentContainer) commentContainer.style.display = "none";
+        }
+    }
+
+    async function readPDF(file) {
+        const buffer = await file.arrayBuffer();
+        const pdfDoc = await pdfjsLib.getDocument({ data: buffer }).promise;
+        loadedPdfDocument = pdfDoc;
+        let fullText = "";
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const content = await page.getTextContent();
+            fullText += content.items.map(item => item.str).join(" ") + "\n";
+        }
+        const inventoryLines = fullText.toLowerCase().split('\n');
+        const itemCountMatch = fullText.match(/Number of Pieces\s*:\s*(\d+)/i);
+        const itemCountEl = document.getElementById('sheetItems');
+        const pdfItemCountEl = document.getElementById('pdfItemCount');
+
+        const cuFtEl = document.getElementById('cuFt');
+        const cuFtRegexPatterns = [
+            /Total Cu\. Ft\.\s*:\s*([\d,]+\.?\d*)/i,
+            /Est\. Total Cu\. Ft\.\s*:\s*([\d,]+\.?\d*)/i,
+            /CUFT\s*[:\s]*([\d,]+\.?\d*)/i,
+            /Volume\s*[:\s]*([\d,]+\.?\d*)\s*CuFt/i
+        ];
+        let cuFtValue = "";
+        for (const pattern of cuFtRegexPatterns) {
+            const cuFtMatch = fullText.match(pattern);
+            if (cuFtMatch && cuFtMatch[1]) {
+                cuFtValue = cuFtMatch[1];
+                break;
+            }
+        }
+        if (cuFtEl && !cuFtEl.value) { // Only fill if not already pre-filled by URL
+            cuFtEl.value = cuFtValue;
+            setFieldStatus(cuFtEl, cuFtValue ? 'pdf-informed' : 'initial-default');
+        }
+
+
+        if (itemCountEl) {
+            if (itemCountMatch && itemCountMatch[1]) {
+                itemCountEl.value = itemCountMatch[1];
+                if(pdfItemCountEl) pdfItemCountEl.textContent = `(PDF says: ${itemCountMatch[1]} pieces)`;
+                setFieldStatus(itemCountEl, 'pdf-informed');
+            } else {
+                if(pdfItemCountEl) pdfItemCountEl.textContent = "(Item count not found in PDF)";
+                setFieldStatus(itemCountEl, 'initial-default');
+            }
+        }
+        let tvCount = 0; let wrCount = 0; let blCount = 0;
+        inventoryLines.forEach(line => {
+            if (/\b(tv box|tvbox)\b/i.test(line) && !/content|description|header/i.test(line.substring(0,30))) tvCount++;
+            if (/\b(wardrobe box)\b/i.test(line) && !/content|description|header/i.test(line.substring(0,30))) wrCount++;
+            if (/\b(blanket|blankets)\b/i.test(line) && (line.includes("pack type") || line.split(/\s\s+/).length > 3) && !/content|description|header/i.test(line.substring(0,30))) blCount++;
+        });
+        const sheetMatTVEl = document.getElementById('sheetMatTV');
+        const sheetMatWREl = document.getElementById('sheetMatWR');
+        const sheetMatBLEl = document.getElementById('sheetMatBL');
+        if(sheetMatTVEl) { sheetMatTVEl.value = tvCount > 0 ? tvCount : ""; setFieldStatus(sheetMatTVEl, tvCount > 0 ? 'pdf-informed' : 'initial-default');}
+        if(sheetMatWREl) { sheetMatWREl.value = wrCount > 0 ? wrCount : ""; setFieldStatus(sheetMatWREl, wrCount > 0 ? 'pdf-informed' : 'initial-default');}
+        if(sheetMatBLEl) { sheetMatBLEl.value = blCount > 0 ? blCount : ""; setFieldStatus(sheetMatBLEl, blCount > 0 ? 'pdf-informed' : 'initial-default');}
+        const pdfMaterialCountsEl = document.getElementById('pdfMaterialCounts');
+        if(pdfMaterialCountsEl) pdfMaterialCountsEl.textContent = `(Approx. PACK TYPES: ${tvCount} TV Box, ${wrCount} Wardrobe Box, ${blCount} Blanket-Wrapped Items)`;
+        updateSheetOutputString();
+        return fullText;
+    }
+
+    async function handlePdfFileChange(e) {
+        const file = e.target.files[0];
+        const pdfStatus = document.getElementById("pdfStatus");
+        const viewPdfBtn = document.getElementById("viewPdfBtn");
+        loadedPdfDocument = null;
+        if (viewPdfBtn) viewPdfBtn.style.display = 'none';
+        if (!file) { if (pdfStatus) pdfStatus.textContent = "No file selected."; return; }
+        if (pdfStatus) pdfStatus.textContent = `Loading ${file.name}...`;
+        try {
+            const rawText = await readPDF(file);
+            const lowerCaseText = rawText.toLowerCase();
+            const debugTextEl = document.getElementById("debugText");
+            if (debugTextEl) debugTextEl.textContent = rawText || "(no text found)";
+            if (pdfStatus) pdfStatus.textContent = `Successfully loaded: ${file.name}`;
+            if (viewPdfBtn) viewPdfBtn.style.display = 'inline-block';
+            currentPageInView = 1;
+            let jobNumber = "", clientName = "";
+            const jobRegexPatterns = [/Shipment Number\s*.*?(\b\d{5,}\b)/i, /Job number\s*.*?(\b\d{5,}\b)/i];
+            for (const pattern of jobRegexPatterns) { const jobMatch = rawText.match(pattern); if (jobMatch && jobMatch[1]) { jobNumber = jobMatch[1]; break; } }
+            if (!jobNumber) { const simpleJobMatch = rawText.match(/(?:Shipment Number|Job number)\s*(\d{5,})/i); if (simpleJobMatch && simpleJobMatch[1]) { jobNumber = simpleJobMatch[1]; } }
+            const shipperNameRegex = /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])(?=\s*(?:Shipment Number|PIECE OF CAKE|USDOT|\d{2}\/\d{2}\/\d{4}|Origin Loading Address))/i;
+            let nameMatch = rawText.match(shipperNameRegex);
+            if (nameMatch && nameMatch[1]) { clientName = nameMatch[1].replace(/[\n\r]+/g, ' ').trim();
+            } else if (jobNumber) { try { const nameBetweenRegex = new RegExp(`Shipment\\s*Number\\s*([A-Za-z][A-Za-z\\s'-]*[A-Za-z])\\s*${jobNumber}`, "i"); nameMatch = rawText.match(nameBetweenRegex); if (nameMatch && nameMatch[1]) clientName = nameMatch[1].trim(); } catch (regexError) { console.error("Regex error for client name:", regexError); } }
+            if (!clientName) { const customerSigRegex = /Customer Signature(?:[\s\S]*?Date[\s\S]*?){2}([A-Za-z\s'-]+?)(?:\n|\r|X\s|$)/i; nameMatch = rawText.match(customerSigRegex); if (nameMatch && nameMatch[1]) { let sigName = nameMatch[1].replace(/packer pac/i, '').replace(/Date/i, '').trim(); if (sigName.length > 1 && sigName.toLowerCase() !== 'x' && sigName.split(/\s+/).length <= 3) clientName = sigName; } }
+
+            const clientNameEl = document.getElementById("clientName");
+            if (clientNameEl && !clientNameEl.value) { // Only fill if not pre-filled by URL
+                 clientNameEl.value = clientName ? clientName.split(/\s+/).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).filter(Boolean).join(" ") : ""; setFieldStatus(clientNameEl, clientName ? 'pdf-informed' : 'initial-default');
+            }
+            const jobEl = document.getElementById("job");
+            if (jobEl && !jobEl.value) { // Only fill if not pre-filled by URL
+                jobEl.value = jobNumber; setFieldStatus(jobEl, jobNumber ? 'pdf-informed' : 'initial-default');
+            }
+
+            questions.forEach(q => { const select = document.getElementById(q.id); if (select) { const keywords = keywordMap[q.id] || []; let itemFound = keywords.length > 0 && keywords.some(kw => lowerCaseText.includes(kw.toLowerCase())); let currentStatus = 'pdf-informed'; if (attentionFieldIds.includes(q.id)) { select.value = defaultValuesConfig[q.id]; } else if (itemFound) { select.value = "YES"; } else { select.value = defaultValuesConfig[q.id] || q.options.find(opt => opt.startsWith("NO ")) || q.options[1]; } setFieldStatus(select, currentStatus); if (select.value === "NO") { select.dispatchEvent(new Event('change')); } } });
+        } catch (err) { if (pdfStatus) pdfStatus.textContent = "Failed to read PDF."; console.error("Error reading PDF in handlePdfFileChange:", err); alert("Error reading PDF file. Check console for details."); if (viewPdfBtn) viewPdfBtn.style.display = 'none'; }
+    }
+
+
+    function updateSheetOutputString() {
+        const warehouseEl = document.getElementById('sheetWarehouse');
+        const addressEl = document.getElementById('sheetAddress');
+        const palletsEl = document.getElementById('sheetPallets');
+        const itemsEl = document.getElementById('sheetItems');
+        const employeeNameEl = document.getElementById('sheetEmployeeName');
+        const bingoStatusOkEl = document.getElementById('sheetBingoStatusOK');
+        const bingoDetailsEl = document.getElementById('sheetBingoDetails');
+        const matTvEl = document.getElementById('sheetMatTV');
+        const matWrEl = document.getElementById('sheetMatWR');
+        const matBlEl = document.getElementById('sheetMatBL');
+        const warehouse = warehouseEl ? warehouseEl.value : "";
+        const address = addressEl ? addressEl.value.trim() : "";
+        const palletsVal = palletsEl ? palletsEl.value : "";
+        const pallets = palletsVal && parseInt(palletsVal) > 0 ? `${palletsVal}pal` : "";
+        const itemsVal = itemsEl ? itemsEl.value : "";
+        const items = itemsVal ? `${itemsVal}itm` : "";
+        const employeeName = employeeNameEl ? employeeNameEl.value.trim() : "";
+        let bingoStatus;
+        if (bingoStatusOkEl && bingoStatusOkEl.checked) {
+            bingoStatus = "Bingo";
+        } else {
+            bingoStatus = bingoDetailsEl ? bingoDetailsEl.value.trim() : "issue_not_specified";
+            if(bingoStatus === "") bingoStatus = "issue_not_specified";
+        }
+        const matTV = matTvEl ? matTvEl.value : "";
+        const matWR = matWrEl ? matWrEl.value : "";
+        const matBL = matBlEl ? matBlEl.value : "";
+        let materialsArray = [];
+        if (matTV && parseInt(matTV) > 0) materialsArray.push(`${matTV}tv`);
+        if (matWR && parseInt(matWR) > 0) materialsArray.push(`${matWR}wr`);
+        if (matBL && parseInt(matBL) > 0) materialsArray.push(`${matBL}bl`);
+        const materialsString = materialsArray.join(',');
+        const outputArray = [warehouse, address, pallets, items, employeeName, bingoStatus, materialsString];
+        const sheetOutputEl = document.getElementById('sheetOutputString');
+        if(sheetOutputEl) sheetOutputEl.value = outputArray.filter(s => s && s.trim() !== "").join(' | ');
+    }
+
+    function copySheetString() {
+        const sheetOutputEl = document.getElementById('sheetOutputString');
+        const textToCopy = sheetOutputEl ? sheetOutputEl.value : "";
+        const statusDiv = document.getElementById('sheetDataStatus');
+        if (!textToCopy) { if(statusDiv) {statusDiv.textContent = "Nothing to copy."; statusDiv.className="error"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 2000);} return; }
+        navigator.clipboard.writeText(textToCopy).then(() => { if(statusDiv) {statusDiv.textContent = "Sheet string copied!"; statusDiv.className="success"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 2000);}
+        }).catch(err => { console.error("Sheet string copy failed:", err); if(statusDiv) {statusDiv.textContent = "Copy failed. Try manual."; statusDiv.className="error"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 3000);} });
+    }
+
+    function resetSheetDataForm() {
+        sheetDataInputIds.forEach(id => {
+            const element = document.getElementById(id);
+            if(!element) return;
+            if (element.type === 'checkbox') {
+                element.checked = (id === 'sheetBingoStatusOK');
+                 if (id === 'useLoadingDock') {
+                    element.checked = false;
+                    const sheetAddressInput = document.getElementById('sheetAddress');
+                    if (sheetAddressInput) {
+                        sheetAddressInput.value = '';
+                        sheetAddressInput.disabled = false;
+                        setFieldStatus(sheetAddressInput, 'initial-default');
+                    }
+                }
+            } else if (element.tagName === 'SELECT') {element.value = "";}
+             else {element.value = "";}
+        });
+        const bingoDetailsContainerEl = document.getElementById('sheetBingoDetailsContainer');
+        if(bingoDetailsContainerEl) bingoDetailsContainerEl.style.display = document.getElementById('sheetBingoStatusOK').checked ? 'none' : 'block';
+        const pdfItemCountEl = document.getElementById('pdfItemCount');
+        if(pdfItemCountEl) pdfItemCountEl.textContent = "";
+        const pdfMaterialCountsEl = document.getElementById('pdfMaterialCounts');
+        if(pdfMaterialCountsEl) pdfMaterialCountsEl.textContent = "";
+        loadSheetDataFromLocalStorage();
+        updateSheetOutputString();
+    }
+
+    function saveSheetDataToLocalStorage() {
+        const empNameEl = document.getElementById('sheetEmployeeName');
+        const warehouseEl = document.getElementById('sheetWarehouse');
+        if(empNameEl) localStorage.setItem('sheetEmployeeName', empNameEl.value);
+        if(warehouseEl) localStorage.setItem('sheetWarehouse', warehouseEl.value);
+    }
+
+    function loadSheetDataFromLocalStorage() {
+        const savedName = localStorage.getItem('sheetEmployeeName');
+        const savedWarehouse = localStorage.getItem('sheetWarehouse');
+        const empNameEl = document.getElementById('sheetEmployeeName');
+        const warehouseEl = document.getElementById('sheetWarehouse');
+        if (savedName && empNameEl) empNameEl.value = savedName;
+        if (savedWarehouse && warehouseEl) warehouseEl.value = savedWarehouse;
+    }
+
+    function handlePhotoUpload(event) {
+        const files = event.target.files;
+        const previewsContainer = document.getElementById('photoPreviews');
+        const commentsEnabled = document.getElementById('enablePhotoCommentsToggle').checked;
+        if (!previewsContainer) return;
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (!file.type.startsWith('image/')){ continue; }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const photoId = `photo-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+                const newPhoto = { id: photoId, file: file, originalDataUrl: e.target.result, compressedDataUrl: null, width:0, height:0, comment: "" };
+                selectedPhotos.push(newPhoto);
+
+                const previewItem = document.createElement('div');
+                previewItem.className = 'photo-preview-item';
+                if (commentsEnabled) {
+                    previewItem.classList.add('comments-enabled');
+                }
+                previewItem.id = photoId;
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.onload = () => { newPhoto.width = img.width; newPhoto.height = img.height; };
+                previewItem.appendChild(img);
+
+                const commentTextarea = document.createElement('textarea');
+                commentTextarea.className = 'photo-comment-textarea';
+                commentTextarea.placeholder = 'Add a comment...';
+                commentTextarea.oninput = (event) => {
+                    const photoToUpdate = selectedPhotos.find(p => p.id === photoId);
+                    if (photoToUpdate) {
+                        photoToUpdate.comment = event.target.value;
+                    }
+                };
+                previewItem.appendChild(commentTextarea);
+
+
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-photo';
+                // SVG for a simple "X"
+                deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="14" height="14"><path d="M18.3 5.71a.996.996 0 0 0-1.41 0L12 10.59 7.11 5.7A.996.996 0 1 0 5.7 7.11L10.59 12 5.7 16.89a.996.996 0 1 0 1.41 1.41L12 13.41l4.89 4.89a.996.996 0 1 0 1.41-1.41L13.41 12l4.89-4.89c.38-.38.38-1.02 0-1.4z"/></svg>`;
+                deleteBtn.title = "Delete photo";
+                deleteBtn.onclick = function() {
+                    selectedPhotos = selectedPhotos.filter(p => p.id !== photoId);
+                    const itemToRemove = document.getElementById(photoId);
+                    if(itemToRemove) itemToRemove.remove();
+                };
+                previewItem.appendChild(deleteBtn);
+                previewsContainer.appendChild(previewItem);
+            };
+            reader.readAsDataURL(file);
+        }
+        if(event.target) event.target.value = null;
+    }
+
+    function validateNoOptionComments() {
+        let allNoCommentsValid = true;
+        let missingCommentsMessages = [];
+        questions.forEach(q => {
+            const selectElement = document.getElementById(q.id);
+            const commentTextarea = document.getElementById(`no_comment_textarea_${q.id}`);
+            if(commentTextarea) commentTextarea.style.borderColor = "var(--input-border)";
+            if (selectElement && selectElement.value === "NO") {
+                const itemName = selectElement.dataset.itemName;
+                const templatePrefix = `${itemName} (NO): `;
+                const currentComment = commentTextarea ? commentTextarea.value.trim() : "";
+                if (currentComment === "" || currentComment === templatePrefix.trim()) {
+                    allNoCommentsValid = false;
+                    missingCommentsMessages.push(`Comment for "${q.itemName}" (NO) is required.`);
+                    if(commentTextarea) commentTextarea.style.borderColor = "var(--danger-red)";
+                }
+            }
+        });
+        return { isValid: allNoCommentsValid, messages: missingCommentsMessages };
+    }
+
+
+    async function generatePdfWithPhotos() {
+        const validationResult = validateNoOptionComments();
+        const pdfGenerateStatus = document.getElementById('pdfGenerateStatus');
+
+        if (!validationResult.isValid) {
+            if(pdfGenerateStatus) {
+                pdfGenerateStatus.textContent = "Validation failed. Please check comments.";
+                pdfGenerateStatus.className = "error";
+            }
+            alert("Please provide valid comments for all items marked 'NO':\n\n" + validationResult.messages.join("\n"));
+            setTimeout(() => { if(pdfGenerateStatus) { pdfGenerateStatus.textContent = ''; pdfGenerateStatus.className = '';} }, 5000);
+            return;
+        }
+
+        if (typeof jspdf === 'undefined' || typeof jspdf.jsPDF === 'undefined') { alert('Error: jsPDF library not loaded.'); return; }
+        const { jsPDF } = jspdf; const doc = new jsPDF({orientation: 'p', unit: 'mm', format: 'a4'});
+        const loader = document.getElementById('pdfGenerateLoader'); const statusEl = document.getElementById('pdfGenerateStatus');
+        if(loader) loader.style.display = 'block'; if(statusEl) { statusEl.textContent = 'Generating PDF...'; statusEl.className = ''; }
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        try {
+            let yPos = 15; const pageHeight = doc.internal.pageSize.height; const margin = 15;
+            const contentWidth = doc.internal.pageSize.width - margin * 2; const lineHeight = 7; let hasNoAnswers = false;
+
+            const rootStyles = getComputedStyle(document.documentElement);
+            const orangeAccent = rootStyles.getPropertyValue('--knicks-orange-accent').trim() || '#F58426';
+
+
+            function addTextToPdf(text, x, currentY, options = {}) {
+                if (currentY > pageHeight - margin - lineHeight) { doc.addPage(); currentY = margin; }
+                const originalColor = doc.getTextColor();
+                const originalSize = doc.getFontSize();
+                if (options.color) doc.setTextColor(options.color);
+                if (options.size) doc.setFontSize(options.size);
+                if (options.fontStyle) doc.setFont(undefined, options.fontStyle);
+
+
+                doc.text(text, x, currentY, {maxWidth: options.maxWidth || contentWidth });
+
+                if (options.color) doc.setTextColor(originalColor);
+                if (options.size) doc.setFontSize(originalSize);
+                if (options.fontStyle) doc.setFont(undefined, 'normal');
+                return currentY + lineHeight * ( (options.size || originalSize) / originalSize) ;
+            }
+            function addBoldTextToPdf(text, x, currentY, options = {}) {
+                 return addTextToPdf(text, x, currentY, {...options, fontStyle: 'bold'});
+            }
+
+            doc.setFontSize(16); yPos = addBoldTextToPdf(`Client: ${document.getElementById('clientName').value || 'N/A'}`, margin, yPos); yPos = addBoldTextToPdf(`Job #: ${document.getElementById('job').value || 'N/A'}`, margin, yPos);
+            const cuFtInputVal = document.getElementById('cuFt').value.trim();
+            if (cuFtInputVal) {
+                yPos = addBoldTextToPdf(`CuFt: ${cuFtInputVal}`, margin, yPos);
+            }
+            yPos += lineHeight * 0.5;
+
+
+            doc.setFontSize(10); yPos = addBoldTextToPdf("Report Details:", margin, yPos);
+            questions.forEach(q => {
+                const selectVal = document.getElementById(q.id).value;
+                let textOptions = {};
+                if (selectVal === "NO") { textOptions.color = 'red'; hasNoAnswers = true; }
+                yPos = addTextToPdf(`• ${q.text}`, margin, yPos, textOptions);
+                const answerLines = doc.splitTextToSize(`  ${selectVal}`, contentWidth - 5);
+                answerLines.forEach(line => { yPos = addTextToPdf(line, margin + 5, yPos, textOptions); });
+                if (selectVal === "NO") {
+                    const commentTextarea = document.getElementById(`no_comment_textarea_${q.id}`);
+                    if (commentTextarea && commentTextarea.value.trim() !== `${q.itemName} (NO):` && commentTextarea.value.trim() !== "") {
+                        const commentLines = doc.splitTextToSize(`    Comment: ${commentTextarea.value.trim()}`, contentWidth - 10);
+                        commentLines.forEach(line => { yPos = addTextToPdf(line, margin + 7, yPos, {color: 'red'}); });
+                    }
+                }
+            });
+
+            // Add CuFt/Pallet check
+            const cuFtFromInput = document.getElementById('cuFt').value.trim();
+            const palletsFromSheet = document.getElementById('sheetPallets').value.trim();
+            if (cuFtFromInput && palletsFromSheet) {
+                const cuFtParsed = parseFloat(cuFtFromInput.replace(/,/g, ''));
+                const palletsParsed = parseInt(palletsFromSheet, 10);
+
+                if (!isNaN(cuFtParsed) && !isNaN(palletsParsed)) {
+                    yPos += lineHeight * 0.25;
+                    let cuFtPalletStatusText = "";
+                    let cuFtPalletStatusColor = 'black'; // Default color
+
+                    if (palletsParsed > 0) {
+                        const ratio = cuFtParsed / palletsParsed;
+                        if (ratio < 70) {
+                            cuFtPalletStatusText = `CuFt / Pallet Ratio: ATTENTION - ${ratio.toFixed(1)} CuFt/Pallet (Ratio < 70)`;
+                            cuFtPalletStatusColor = 'red';
+                        } else if (ratio > 150) {
+                            cuFtPalletStatusText = `CuFt / Pallet Ratio: ATTENTION - ${ratio.toFixed(1)} CuFt/Pallet (Ratio > 150)`;
+                            cuFtPalletStatusColor = 'red';
+                        } else {
+                            cuFtPalletStatusText = `CuFt / Pallet Ratio: OK - ${ratio.toFixed(1)} CuFt/Pallet (70-150 range)`;
+                        }
+                    } else if (palletsParsed === 0 && cuFtParsed > 0) {
+                        cuFtPalletStatusText = `CuFt / Pallet Ratio: ATTENTION - Non-zero CuFt with 0 pallets`;
+                        cuFtPalletStatusColor = 'red';
+                    } else if (palletsParsed === 0 && cuFtParsed === 0) {
+                         cuFtPalletStatusText = `CuFt / Pallet Ratio: OK - 0 CuFt, 0 Pallets`;
+                    }
+                    // else (e.g. pallets < 0) - no text added
+
+                    if (cuFtPalletStatusText) {
+                        yPos = addTextToPdf(`• ${cuFtPalletStatusText}`, margin, yPos, { color: cuFtPalletStatusColor });
+                    }
+                    yPos += lineHeight * 0.25;
+                }
+            }
+
+
+            yPos += lineHeight * 0.5;
+            yPos = addBoldTextToPdf("General Comments:", margin, yPos); const generalComments = document.getElementById('generalComments').value.trim(); if (generalComments) { const commentLines = doc.splitTextToSize(generalComments, contentWidth); commentLines.forEach(line => { yPos = addTextToPdf("• " + line, margin, yPos); }); } else { yPos = addTextToPdf("• None", margin, yPos); } yPos += lineHeight * 0.5;
+
+            const ratingValue = parseFloat(document.getElementById('rating').value);
+            let ratingTextOptions = {}; if (ratingValue < 4) { ratingTextOptions.color = 'red';}
+            yPos = addBoldTextToPdf(`Rating: ${ratingValue.toFixed(1)}`, margin, yPos, ratingTextOptions); yPos += lineHeight * 0.5;
+
+            yPos = addBoldTextToPdf("Google Sheets Data String:", margin, yPos); const sheetString = document.getElementById('sheetOutputString').value; const sheetStringLines = doc.splitTextToSize(sheetString, contentWidth); sheetStringLines.forEach(line => { yPos = addTextToPdf(line, margin, yPos); }); yPos += lineHeight;
+
+            if (selectedPhotos.length > 0) {
+                yPos = addBoldTextToPdf("Attached Photos:", margin, yPos);
+                for (const photo of selectedPhotos) {
+                    if (yPos > pageHeight - margin - 50) { doc.addPage(); yPos = margin; }
+                    try {
+                        const imgDataUrl = await compressImage(photo.originalDataUrl, 1024, 0.7);
+                        const img = new Image(); img.src = imgDataUrl; await new Promise(r => img.onload=r);
+                        let imgWidth = img.width, imgHeight = img.height;
+                        const maxImgWidth = contentWidth; let maxImgHeight = pageHeight - yPos - margin - 5;
+                        if (photo.comment) maxImgHeight -= (11 * 0.352778 * 2);
+
+                        if (imgWidth > maxImgWidth) { const r = maxImgWidth / imgWidth; imgWidth = maxImgWidth; imgHeight *= r; }
+                        if (imgHeight > maxImgHeight) { const r = maxImgHeight / imgHeight; imgHeight = maxImgHeight; imgWidth *= r; }
+                        if (imgHeight <=0 || imgWidth <= 0) { console.warn("Skipping image:", photo.file.name); continue; }
+
+                        if (yPos + imgHeight + (photo.comment ? (11 * 0.352778 * 2) : 0) > pageHeight - margin) { doc.addPage(); yPos = margin; }
+                        const xCentered = (doc.internal.pageSize.width - imgWidth) / 2;
+                        doc.addImage(imgDataUrl, 'JPEG', xCentered, yPos, imgWidth, imgHeight);
+                        yPos += imgHeight + 2;
+
+                        if (photo.comment && photo.comment.trim() !== "") {
+                            if (yPos > pageHeight - margin - (11 * 0.352778 * 2)) { doc.addPage(); yPos = margin; }
+                            doc.setFillColor(orangeAccent);
+                            doc.rect(margin, yPos, 3, 3, 'F');
+                            const commentX = margin + 5;
+                            const commentMaxWidth = contentWidth - 5;
+                            doc.setFontSize(11);
+                            const commentLines = doc.splitTextToSize(photo.comment.trim(), commentMaxWidth);
+                            commentLines.forEach(line => {
+                                if (yPos + (11 * 0.352778) > pageHeight - margin - 5) { doc.addPage(); yPos = margin; doc.setFillColor(orangeAccent); doc.rect(margin, yPos, 3, 3, 'F');}
+                                doc.text(line, commentX, yPos + 2.5);
+                                yPos += (11 * 0.352778);
+                            });
+                            doc.setFontSize(10);
+                            yPos += 2;
+                        }
+                        yPos += 3;
+                    } catch (imgError) { console.error("Error image:", photo.file.name, imgError); yPos = addTextToPdf(`[Err img: ${photo.file.name}]`, margin, yPos); }
+                }
+            }
+
+            let fileName = `Report-${document.getElementById('job').value || 'Custom'}`;
+            if (hasNoAnswers) fileName += '_ATTENTION-NO'; if (ratingValue < 4) fileName += '_RatingLow'; fileName += '.pdf';
+            const pdfOutput = doc.output('blob');
+            let shared = false;
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([pdfOutput], fileName, { type: 'application/pdf' })] })) {
+                try {
+                    await navigator.share({
+                        files: [new File([pdfOutput], fileName, { type: 'application/pdf' })],
+                        title: fileName, text: `Report for Job #${document.getElementById('job').value || 'Custom'}`
+                    });
+                    if(statusEl) { statusEl.textContent = 'PDF shared! Also downloading.'; statusEl.className = 'success'; }
+                    shared = true;
+                } catch (shareError) { console.error("Share PDF error:", shareError); if(statusEl && !shared) { statusEl.textContent = 'Share failed. Downloading.'; statusEl.className = 'error'; }}
+            }
+            doc.save(fileName);
+            if(statusEl && !shared) { statusEl.textContent = 'PDF downloaded!'; statusEl.className = 'success'; }
+            else if (statusEl && shared) { /* Message already set */ }
+
+
+        } catch (error) { console.error("Generate PDF error:", error); if(statusEl) { statusEl.textContent = 'Error PDF. See console.'; statusEl.className = 'error'; } alert("Error PDF: " + error.message);
+        } finally { if(loader) loader.style.display = 'none'; setTimeout(() => { if(statusEl) statusEl.textContent = ''; statusEl.className='';}, 5000); }
+    }
+
+    async function compressImage(dataUrl, maxWidth, quality) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                let width = img.width; let height = img.height;
+                if (width > maxWidth) { height = (maxWidth / width) * height; width = maxWidth; }
+                const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+                const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', quality));
+            };
+            img.onerror = reject; img.src = dataUrl;
+        });
+    }
+
+    async function renderPdfPage(pdfDoc, pageNum, canvas) {
+        const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: 1.5 });
+        canvas.height = viewport.height; canvas.width = viewport.width;
+        const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport };
+        await page.render(renderContext).promise;
+    }
+    async function displayPdfPageInModal(pageNum) {
+        if (!loadedPdfDocument || pageNum < 1 || pageNum > loadedPdfDocument.numPages) return;
+        currentPageInView = pageNum; const viewerContainer = document.getElementById('pdfViewerContainer'); if(!viewerContainer) return;
+        viewerContainer.innerHTML = ''; const canvas = document.createElement('canvas'); viewerContainer.appendChild(canvas);
+        const currentPageNumEl = document.getElementById('currentPageNum'); const totalPagesNumEl = document.getElementById('totalPagesNum');
+        const prevPageBtn = document.getElementById('prevPage'); const nextPageBtn = document.getElementById('nextPage');
+        if(currentPageNumEl) currentPageNumEl.textContent = currentPageInView; if(totalPagesNumEl) totalPagesNumEl.textContent = loadedPdfDocument.numPages;
+        if(prevPageBtn) prevPageBtn.disabled = currentPageInView <= 1; if(nextPageBtn) nextPageBtn.disabled = currentPageInView >= loadedPdfDocument.numPages;
+        try { await renderPdfPage(loadedPdfDocument, currentPageInView, canvas); } catch (error) { console.error("Error rendering PDF page:", error); viewerContainer.textContent = "Error rendering PDF page."; }
+    }
+    function openPdfModal() { if (!loadedPdfDocument) { alert("Please upload a PDF file first."); return; } const modalEl = document.getElementById('pdfModal'); if(modalEl) { modalEl.style.display = 'flex'; history.pushState({pdfModalOpen: true}, "PDF Viewer", "#pdf"); } displayPdfPageInModal(currentPageInView); }
+    function closePdfModal(manageHistory = true) { const modalEl = document.getElementById('pdfModal'); if(modalEl) modalEl.style.display = 'none'; const viewerEl = document.getElementById('pdfViewerContainer'); if(viewerEl) viewerEl.innerHTML = ''; if (manageHistory && window.location.hash === "#pdf") { history.back(); }}
+    function closePdfModalWithHistory() { closePdfModal(true); }
+
+    function toggleDebug() {
+        const dbg = document.getElementById("debugText"); const toggle = document.getElementById("debugToggle"); if(!dbg || !toggle) return;
+        const isVisible = dbg.style.display === "block"; dbg.style.display = isVisible ? "none" : "block";
+        toggle.textContent = isVisible ? "Show Extracted PDF Text" : "Hide Extracted PDF Text";
+    }
+  </script>
+</body>
+</html>
