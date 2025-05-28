@@ -816,3 +816,140 @@ input:checked + .slider:before {
     width: 60px;
   }
 }
+/* QR Scanner Styles */
+.qr-scan-button {
+  padding: 10px 15px;
+  background-color: var(
+    --company-pink
+  ); /* Main accent color for primary QR scan button */
+  color: var(--text-light); /* Text light for good contrast on pink */
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0; /* SVG will have its own margin if needed */
+  min-width: 150px;
+  margin-top: 10px; /* Spacing from elements above */
+  transition: background-color 0.2s ease, filter 0.2s ease, transform 0.1s ease;
+  line-height: 1.2; /* Adjust if text wraps awkwardly */
+}
+
+.qr-scan-button svg {
+  /* margin-right is set inline on the SVG in HTML to ensure it's applied */
+}
+
+.qr-scan-button:hover {
+  filter: brightness(1.15);
+}
+
+.qr-scan-button:active {
+  transform: scale(0.98);
+}
+
+.qr-scan-button:disabled {
+  background-color: var(--button-secondary-bg); /* Use a disabled-like color */
+  color: var(--text-secondary); /* Dim text color when disabled */
+  cursor: not-allowed;
+  filter: brightness(0.85);
+}
+
+/* Secondary style for QR Close button */
+.qr-scan-button.secondary {
+  background-color: var(--button-secondary-bg); /* Default secondary bg */
+  color: var(--text-light); /* Text light for secondary button */
+}
+
+html.dark-mode .qr-scan-button.secondary {
+  /* --button-secondary-bg adapts, ensure text contrast if needed, but var(--text-light) might still be ok
+     However, most dark mode secondary buttons use a lighter text.
+     Let's check clearReportBtn: it uses --text-light in both modes. So this should be fine.
+  */
+}
+
+.qr-scan-button.secondary:hover {
+  filter: brightness(1.1); /* Standard hover for secondary */
+}
+
+#qrReader {
+  border: 2px solid var(--company-pink); /* Make the reader border more prominent */
+  background-color: var(--secondary-bg);
+  border-radius: 4px;
+  overflow: hidden; /* Ensures video corners are clipped if video is larger */
+}
+
+#qrReader video {
+  /* Ensure video fills the container and maintains aspect ratio */
+  width: 100% !important;
+  height: auto !important;
+  display: block; /* Removes any extra space below the video element */
+}
+/* Style for successful scan indication on the job number field */
+.scan-successful {
+  background-color: #d4edda !important; /* Light green background */
+  border-color: #c3e6cb !important;
+  color: #155724 !important;
+  /* Add any other subtle highlighting you want */
+}
+
+/* Header button styles */
+.header-actions-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: fit-content; /* Adjust as needed */
+}
+
+.clear-report-button {
+  background-color: var(--button-secondary-bg);
+  color: var(--text-light);
+  transition: background-color 0.2s ease, filter 0.2s ease, transform 0.1s ease;
+}
+
+.clear-report-button:hover {
+  filter: brightness(1.1);
+}
+
+.clear-report-button:active {
+  transform: scale(0.98);
+}
+
+.qr-scan-button.header-button {
+  /* Inherits general header-button styles */
+}
+
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Adjustments for header appearance - you might need to fine-tune these */
+.app-header {
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between; /* Align buttons to the right */
+  align-items: center;
+  background-color: var(--header-bg);
+  color: var(--header-text);
+}
+
+.header-title-logo {
+  /* You can still use this if you want to add something else later */
+  /* For now, it might be empty or contain a hidden element */
+  display: none; /* Hide the logo container for now */
+}

@@ -18,6 +18,15 @@ document.addEventListener("DOMContentLoaded", () => {
   initializePhotoHandling();
   setupFormEventListeners(); // Sets up listeners for inputs that affect sheet string, etc.
 
+  // Initialize QR Scanner functionality
+  if (typeof setupQrScanner === "function") {
+    setupQrScanner();
+  } else {
+    console.error(
+      "setupQrScanner function not found. Ensure qrScanner.js is loaded correctly."
+    );
+  }
+
   updateSheetOutputString(); // Initial generation
   generateSheetFormula(); // Initial generation
 
@@ -91,16 +100,12 @@ document.addEventListener("DOMContentLoaded", () => {
       event.state &&
       event.state.pdfModalOpen === false
     ) {
-      // This logic might be tricky if popstate is for other things.
-      // The closePdfModal checks history.back() itself.
-      // The main purpose here is if user uses browser back AND modal was open.
-      closePdfModal(false); // Don't manage history again, popstate did.
+      closePdfModal(false);
     } else if (
       pdfModal &&
       pdfModal.style.display === "flex" &&
       (!event.state || !event.state.pdfModalOpen)
     ) {
-      // If modal is open, but history state doesn't reflect it (e.g. user navigated back past #pdf)
       closePdfModal(false);
     }
   });
@@ -111,15 +116,14 @@ function clearReportData() {
     return;
   }
 
-  resetFormFields(); // Handles all form inputs, including dynamic ones via allDynamicInputElementsForReset
-  clearPhotoData(); // Clears photo previews and related data
-  clearPdfData(); // Resets PDF document state
-  resetUIForClearReport(); // Resets other UI elements like statuses, PDF viewer button
+  resetFormFields();
+  clearPhotoData();
+  clearPdfData();
+  resetUIForClearReport();
 
-  // Re-initialize certain parts that depend on cleared/reset values
   updateSheetOutputString();
   generateSheetFormula();
-  updatePalletPaperDisplay(); // Clear pallet paper display
+  updatePalletPaperDisplay();
 
   alert("Report data has been cleared.");
 }
