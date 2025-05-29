@@ -1,422 +1,527 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Moving Report Generator - Styled v3</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    :root {
-      --company-pink: #f04e98; /* A vibrant pink, adjust if you have the exact hex */
-      --dark-blue-primary-bg: #1a202c; /* Very dark (charcoal/slate blue) */
-      --dark-blue-secondary-bg: #2d3748; /* Darker grey-blue for sections/inputs */
-      --dark-blue-border: #4a5568;
-      --text-light: #e2e8f0; /* Light grey for text */
-      --text-medium: #a0aec0; /* Medium grey for labels/secondary text */
-      --knicks-orange-accent: #f58426; /* Knicks Orange for attention fields */
-      --knicks-blue-accent: #006bb6; /* Knicks Blue (can be used for user-modified or links) */
-
-      --status-initial-bg: #3e4c5f;
-      --status-initial-border: #718096; /* Subdued grey */
-      --status-pdf-bg: #2f5944; /* Darker green tint */
-      --status-pdf-border: #38a169; /* Green */
-      --status-user-bg: #2c5282; /* Darker blue tint */
-      --status-user-border: var(--knicks-blue-accent); /* User modified uses a Knicks-like blue */
-      --status-attention-bg: #4c331a; /* Darker orange tint for attention background */
-      --status-attention-border: var(--knicks-orange-accent);
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-      padding: 20px; background-color: var(--dark-blue-primary-bg); color: var(--text-light);
-      line-height: 1.6; margin-bottom: 90px;
-    }
-    h1 { text-align: center; color: var(--company-pink); margin-bottom: 30px; font-weight: 700;}
-    h2 { color: var(--text-light); border-bottom: 1px solid var(--company-pink); padding-bottom: 5px; margin-top:0; margin-bottom: 15px; }
-
-    select, input[type="text"], input[type="number"], input[type="file"], textarea {
-      width: 100%; padding: 10px; font-size: 16px; margin-top: 5px;
-      background-color: var(--dark-blue-secondary-bg); color: var(--text-light);
-      border: 1px solid var(--dark-blue-border); border-radius: 4px; box-sizing: border-box;
-      transition: border-color 0.3s ease, background-color 0.3s ease, border-left-color 0.3s ease;
-      border-left-width: 4px;
-    }
-    input[type="file"] { padding: 6px; }
-    textarea { resize: vertical; min-height: 80px; }
-    .no-comment-input { margin-top: 8px; min-height: 60px; }
-    label { display: block; margin-top: 15px; font-weight: 600; color: var(--text-medium); }
-    input[type="checkbox"] { width: auto; margin-right: 8px; vertical-align: middle; }
-    label.checkbox-label { display: inline-block; margin-top: 15px; font-weight: normal; }
-
-
-    .field-initial-default { background-color: var(--status-initial-bg); border-left-color: var(--status-initial-border); }
-    .field-pdf-informed { background-color: var(--status-pdf-bg); border-left-color: var(--status-pdf-border); }
-    .field-user-modified { background-color: var(--status-user-bg); border-left-color: var(--status-user-border); }
-    .field-requires-attention { background-color: var(--status-attention-bg) !important; border-left-color: var(--status-attention-border) !important; font-weight: 500; }
-
-    button {
-      margin-top: 20px; padding: 12px 20px; font-size: 16px; font-weight: 600;
-      margin-right: 10px; background-color: var(--company-pink); color: white;
-      border: none; border-radius: 4px; cursor: pointer;
-      transition: background-color 0.2s ease, transform 0.1s ease;
-    }
-    button:hover { filter: brightness(1.1); }
-    button:active { transform: scale(0.98); }
-    button.secondary { background-color: #5a6268; }
-    button.secondary:hover { background-color: #495057;}
-    #generateReportBtn.generated { background-color: #28a745 !important; }
-    #viewPdfBtn { display: none; position: fixed; bottom: 20px; right: 20px; z-index: 999; background-color: var(--company-pink); box-shadow: 0 4px 12px rgba(0,0,0,0.3); margin-top: 0; padding: 10px 15px; border-radius: 50px; }
-    #viewPdfBtn:hover { filter: brightness(1.15); }
-
-    pre { white-space: pre-wrap; word-wrap: break-word; background: var(--dark-blue-secondary-bg); color: var(--text-light); padding: 15px; border: 1px solid var(--dark-blue-border); border-radius: 4px; margin-top: 20px; max-height: 400px; overflow-y: auto; }
-    #pdfStatus { color: #48bb78; }
-    #generationStatusMsg, #sheetDataStatus { min-height: 20px; margin-top:10px; font-weight: 500;}
-    #generationStatusMsg.success, #sheetDataStatus.success { color: #48bb78; }
-    #generationStatusMsg.error, #sheetDataStatus.error { color: #fc8181; }
-
-    #debugToggle { cursor: pointer; font-size: 14px; margin-top: 15px; color: var(--knicks-blue-accent); text-decoration: underline; display: block; }
-    #debugText { display: none; background: #111722; border-color: var(--dark-blue-border); }
-
-    .report-section { margin-bottom: 20px; padding: 20px; background: var(--dark-blue-secondary-bg); border: 1px solid var(--dark-blue-border); border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-    .question-item, .sheet-data-item { margin-bottom: 15px; }
-    .no-comment-container { margin-top: 5px; padding-left: 10px; border-left: 3px solid var(--knicks-orange-accent); }
-
-    .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; background-color: rgba(0,0,0,0.7); align-items: center; justify-content: center; }
-    .modal-content { background-color: var(--dark-blue-secondary-bg); color: var(--text-light); margin: auto; padding:0; border: 1px solid var(--dark-blue-border); width: 90%; max-width: 800px; border-radius: 8px; position: relative; max-height: 90vh; display: flex; flex-direction: column; }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; border-bottom: 1px solid var(--dark-blue-border); }
-    .modal-header h3 { margin: 0; color: var(--company-pink); }
-    .modal-close-button-fixed { position: absolute; top: 10px; right: 15px; color: var(--text-medium); font-size: 30px; font-weight: bold; cursor: pointer; background-color: rgba(45, 55, 72, 0.7); border-radius: 50%; width: 30px; height: 30px; line-height: 28px; text-align: center; z-index: 1005; }
-    .modal-close-button-fixed:hover { color: var(--text-light); background-color: rgba(74, 85, 104, 0.9); }
-    #pdfViewerContainer { width:100%; flex-grow: 1; overflow-y: auto; background: var(--dark-blue-primary-bg); padding:10px; text-align:center; margin-top: 45px; }
-    #pdfViewerContainer canvas { margin-bottom: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 100%; height: auto !important; }
-    .pdf-page-navigation { text-align: center; padding: 10px 0; background-color: var(--dark-blue-secondary-bg); border-top: 1px solid var(--dark-blue-border); flex-shrink: 0;}
-    .pdf-page-navigation button { margin: 0 5px; padding: 8px 12px; font-size: 14px; margin-top:0; background-color: var(--company-pink); color:white; }
-    .pdf-page-navigation button:disabled { background-color: #5a6268; cursor: not-allowed;}
-    .pdf-page-navigation span { color: var(--text-light); }
-
-    .output-group { margin-top: 15px; }
-    .output-group label { font-size: 0.9em; color: var(--text-medium); }
-    .output-group textarea { min-height: 60px; background-color: var(--dark-blue-primary-bg); border-color: var(--dark-blue-border); margin-top: 2px;}
-  </style>
-</head>
-<body>
-  <h1>Moving Report Generator</h1>
-
-  <div class="report-section">
-    <label for="clientName">• Client Last Name:</label>
-    <input type="text" id="clientName" placeholder="Enter client's last name">
-  </div>
-
-  <div class="report-section">
-    <label for="job">• Job number:</label>
-    <input type="text" id="job" placeholder="Enter job number e.g., ######">
-    <label for="pdfFile" style="margin-top: 15px;">Upload PDF Inventory:</label>
-    <input type="file" id="pdfFile" accept="application/pdf">
-    <div id="pdfStatus"></div>
-  </div>
-
-  <div id="fields" class="report-section">
-    <h2>Report Details</h2>
-  </div>
-
-  <div class="report-section">
-    <label for="generalComments">Additional General Comments:</label>
-    <textarea id="generalComments" rows="3" placeholder="Enter any other comments here"></textarea>
-  </div>
-
-  <div class="report-section">
-    <label for="rating">Rating:</label>
-    <select id="rating">
-      <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-      <option value="4" selected>4</option><option value="5">5</option>
-    </select>
-  </div>
-
-  <button id="generateReportBtn" onclick="generateReport()">Generate Report</button>
-  <button onclick="copyToClipboardNew()">📋 Copy Report</button>
-  <button onclick="copyToClipboardFallback()" class="secondary">🧪 Copy (Old Method)</button>
-  <button onclick="selectText()" class="secondary">✍️ Select Text</button>
-  <div id="generationStatusMsg"></div>
-  <pre id="output"></pre>
-
-  <div class="report-section">
-    <h2>Data for Google Sheets Cell</h2>
-    <div class="sheet-data-item">
-      <label for="sheetWarehouse">Warehouse:</label>
-      <select id="sheetWarehouse">
-        <option value="">Select Warehouse</option>
-        <option value="Rdgvd">Rdgvd (pallets)</option>
-        <option value="Roselle">Roselle (pallets)</option>
-        <option value="Nj Roselle">Nj Roselle (pallets)</option>
-        <option value="Masp1">Masp1 (pallets)</option>
-        <option value="Masp2">Masp2 (pallets)</option>
-        <option value="Masp3">Masp3 (pallets)</option>
-        <option value="Masp4">Masp4 (pallets)</option>
-        <option value="Skillman">Skillman (pallets)</option>
-        <option value="Traffic">Traffic</option>
-        <option value="LIC">LIC</option>
-        <option value="Bronx">Bronx</option>
-        <option value="OtherWH">Other (Specify)</option>
-      </select>
-    </div>
-    <div class="sheet-data-item">
-      <label for="sheetAddress">Location/Address (e.g., A23R):</label>
-      <input type="text" id="sheetAddress" placeholder="e.g., A23R or Street Address">
-    </div>
-    <div class="sheet-data-item">
-      <label for="sheetPallets">Pallets:</label>
-      <input type="number" id="sheetPallets" placeholder="e.g., 2" min="0">
-    </div>
-    <div class="sheet-data-item">
-      <label for="sheetItems">Items:</label>
-      <input type="number" id="sheetItems" placeholder="e.g., 20" min="0">
-      <small id="pdfItemCount" style="color:var(--text-medium); display:block; margin-top:3px;"></small>
-    </div>
-    <div class="sheet-data-item">
-      <label for="sheetEmployeeName">Employee Name:</label>
-      <input type="text" id="sheetEmployeeName" placeholder="Your Name">
-    </div>
-    <div class="sheet-data-item">
-        <input type="checkbox" id="sheetBingoStatusOK" checked>
-        <label for="sheetBingoStatusOK" class="checkbox-label">Inventory OK (Bingo)?</label>
-        <div id="sheetBingoDetailsContainer" style="display:none; margin-top:5px;">
-            <label for="sheetBingoDetails">Bingo Issues (e.g., #34v, #3m):</label>
-            <input type="text" id="sheetBingoDetails" placeholder="#ID void/missing">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Moving Report Generator - v5.5 (Enhanced)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-title-logo" style="display: none"></div>
+      <div class="header-actions-wrapper">
+        <button id="startQrScanBtn" class="header-button qr-scan-button">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            class="bi bi-qr-code-scan"
+            viewBox="0 0 16 16"
+            style="margin-right: 8px"
+          >
+            <path
+              d="M0 .5A.5.5 0 0 1 .5 0h3a.5.5 0 0 1 0 1h-3A.5.5 0 0 1 0 .5M4 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 4 0m7 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 11 0m3 .5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5M0 4a.5.5 0 0 1 .5-.5H1a.5.5 0 0 1 0 1H.5A.5.5 0 0 1 0 4m3 0a.5.5 0 0 1 .5-.5H4a.5.5 0 0 1 0 1h-.5A.5.5 0 0 1 3 4m1 0h1v1H4zm1 1H4v1h1zm0 1H4v1h1zm1 0h1v1H5zm1 1H5v1h1zm0 1H5v1h1zm1 0h1v1H6zm1 1H6v1h1zm0 1H6v1h1zm1 0h1v1H7zm1 1H7v1h1zm0 1H7v1h1zm1-5h1v1H8zm1 1H8v1h1zm0 1H8v1h1zm1 0h1v1H9zm1 1H9v1h1zm0 1H9v1h1zm1 0h1v1h-1zm1 1h-1v1h1zm0 1h-1v1h1zm1-5h1v1h-1zm1 1h-1v1h1zm0 1h-1v1h1zm1 0h1v1h-1zm1 1h-1v1h1zm0 1h-1v1h1zM15 4a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 1 0 1h-.5a.5.5 0 0 1-.5-.5m-3 0a.5.5 0 0 1 .5-.5H13a.5.5 0 0 1 0 1h-.5a.5.5 0 0 1-.5-.5m1 11.5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5m-3 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5M0 11.5a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3A.5.5 0 0 1 0 11.5m15 0a.5.5 0 0 1 .5.5v3a.5.5 0 0 1-1 0v-3a.5.5 0 0 1 .5-.5M7 4h1v1H7zm1 1H7v1h1zm-1 3h1v1H7zm1 1H7v1h1z"
+            />
+            <path
+              d="M2 2h2v2H2zM3 3V2H2v1zM2 3h1V2H2zM12 2h2v2h-2zM13 3V2h-1v1zM12 3h1V2h-1zM2 12h2v2H2zM3 13v-1H2v1zM2 13h1v-1H2zM12 12h2v2h-2zM13 13v-1h-1v1zM12 13h1v-1h-1z"
+            />
+          </svg>
+          Scan QR
+        </button>
+        <button
+          id="clearReportBtn"
+          class="header-button clear-report-button"
+          title="Clear Report Data"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            class="bi bi-eraser-fill"
+            viewBox="0 0 16 16"
+          >
+            <path
+              d="M8.086 2.207a2 2 0 0 1 2.828 0l3.879 3.879a2 2 0 0 1 0 2.828l-5.5 5.5A2 2 0 0 1 7.879 15H5.12a2 2 0 0 1-1.414-.586l-2.5-2.5a2 2 0 0 1 0-2.828zm.66 11.34L3.453 8.254 1.914 9.793a1 1 0 0 0 0 1.414l2.5 2.5a1 1 0 0 0 .707.293H7.88a1 1 0 0 0 .707-.293z"
+            />
+          </svg>
+          Clear
+        </button>
+        <div class="theme-switch-wrapper">
+          <label for="themeToggle">Dark</label>
+          <label class="theme-switch">
+            <input type="checkbox" id="themeToggle" />
+            <span class="slider"></span>
+          </label>
         </div>
-    </div>
-    <div class="sheet-data-item">
-      <label>Materials (approx. from PDF, please verify):</label>
-      <div>
-        TV Boxes: <input type="number" id="sheetMatTV" placeholder="0" min="0" style="width: 60px; margin-right:10px;">
-        Wardrobes: <input type="number" id="sheetMatWR" placeholder="0" min="0" style="width: 60px; margin-right:10px;">
-        Blankets: <input type="number" id="sheetMatBL" placeholder="0" min="0" style="width: 60px;">
-        <small id="pdfMaterialCounts" style="color:var(--text-medium); display:block; margin-top:3px;"></small>
+      </div>
+    </header>
+
+    <div style="padding: 0 20px">
+      <div class="report-section">
+        <div
+          id="qrScannerContainer"
+          style="display: none; margin-bottom: 15px; text-align: center"
+        >
+          <div
+            id="qrReader"
+            style="
+              width: 100%;
+              max-width: 400px;
+              margin: 0 auto 10px auto;
+              border-radius: 4px;
+              overflow: hidden;
+            "
+          ></div>
+          <button
+            id="closeQrScanBtn"
+            class="qr-scan-button secondary"
+            style="display: none"
+          >
+            Close Scanner
+          </button>
+        </div>
+
+        <div class="field-group top-field-group">
+          <div>
+            <label for="clientName">• Client Name:</label>
+            <input
+              type="text"
+              id="clientName"
+              placeholder="Enter client's name"
+            />
+          </div>
+          <div>
+            <label for="job">• Job number:</label>
+            <input
+              type="text"
+              id="job"
+              placeholder="Enter job number (Lead ID)"
+            />
+          </div>
+          <div>
+            <label for="cuFt">• CuFt:</label>
+            <input type="text" id="cuFt" placeholder="Volume (e.g., 3655.00)" />
+          </div>
+        </div>
+
+        <div>
+          <label for="pdfFile" style="margin-top: 15px"
+            >Upload PDF Inventory:</label
+          >
+          <input type="file" id="pdfFile" accept="application/pdf" />
+          <div id="pdfStatus"></div>
+        </div>
+      </div>
+
+      <div class="report-section" id="photoSection">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+          "
+        >
+          <h2>Attach Photos for PDF Report</h2>
+          <div>
+            <input type="checkbox" id="enablePhotoCommentsToggle" />
+            <label for="enablePhotoCommentsToggle" class="checkbox-label"
+              >Enable Photo Comments</label
+            >
+          </div>
+        </div>
+
+        <div class="photo-actions-container">
+          <button id="takePhotoButton" class="photo-action-button">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-camera-fill"
+              viewBox="0 0 16 16"
+            >
+              <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+              <path
+                d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m9-1a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0"
+              />
+            </svg>
+            Take Photo
+          </button>
+          <input
+            type="file"
+            id="cameraPhotoInput"
+            accept="image/*"
+            capture="environment"
+          />
+
+          <button id="uploadPhotosButton" class="photo-action-button">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-images"
+              viewBox="0 0 16 16"
+            >
+              <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3" />
+              <path
+                d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1z"
+              />
+            </svg>
+            Upload Photos
+          </button>
+          <input type="file" id="galleryPhotoInput" accept="image/*" multiple />
+        </div>
+        <div id="photoPreviews"></div>
+      </div>
+
+      <div id="fields" class="report-section">
+        <h2>Report Details</h2>
+      </div>
+
+      <div class="report-section">
+        <label for="generalComments">Additional General Comments:</label>
+        <textarea
+          id="generalComments"
+          rows="3"
+          placeholder="Enter any other comments here"
+        ></textarea>
+      </div>
+
+      <div class="report-section">
+        <label for="rating">Rating (1.0 - 5.0):</label>
+        <input
+          type="number"
+          id="rating"
+          value="4.0"
+          min="1"
+          max="5"
+          step="0.1"
+          placeholder="e.g., 4.5"
+        />
+      </div>
+
+      <div class="report-section">
+        <h2>Data for Google Sheets Cell</h2>
+        <div class="sheet-data-item">
+          <label for="sheetWarehouse">Warehouse:</label>
+          <select id="sheetWarehouse">
+            <option value="">Select Warehouse</option>
+            <option value="Masp1">Masp1</option>
+            <option value="Masp2">Masp2</option>
+            <option value="Masp3">Masp3</option>
+            <option value="Masp4">Masp4</option>
+            <option value="TRAF">TRAF</option>
+            <option value="LIC">LIC</option>
+            <option value="SKIL">SKIL</option>
+            <option value="BRON">BRON</option>
+            <option value="WTPL">WTPL</option>
+            <option value="ROS">ROS</option>
+            <option value="HALE">HALE</option>
+            <option value="PASS">PASS</option>
+            <option value="OtherWH">Other (Specify)</option>
+          </select>
+        </div>
+        <div class="sheet-data-item">
+          <input type="checkbox" id="useLoadingDock" style="margin-top: 10px" />
+          <label for="useLoadingDock" class="checkbox-label"
+            >Use "loading dock" for Address</label
+          >
+          <label for="sheetAddress" style="margin-top: 5px"
+            >Location/Address (e.g., A23R):</label
+          >
+          <input
+            type="text"
+            id="sheetAddress"
+            placeholder="e.g., A23R or Street Address"
+          />
+        </div>
+
+        <div class="field-group responsive-field-group">
+          <div class="sheet-data-item" style="flex: 1 1 180px">
+            <label for="sheetPallets">Pallets:</label>
+            <input
+              type="number"
+              id="sheetPallets"
+              placeholder="e.g., 2"
+              min="0"
+            />
+          </div>
+          <div class="sheet-data-item" style="flex: 1 1 180px">
+            <label for="sheetItems">Items:</label>
+            <input
+              type="number"
+              id="sheetItems"
+              placeholder="e.g., 20"
+              min="0"
+            />
+            <small
+              id="pdfItemCount"
+              style="
+                color: var(--text-secondary);
+                display: block;
+                margin-top: 3px;
+              "
+            ></small>
+          </div>
+          <div class="sheet-data-item" style="flex: 1 1 180px">
+            <label for="sheetEmployeeName">Employee Name:</label>
+            <input type="text" id="sheetEmployeeName" placeholder="Your Name" />
+          </div>
+        </div>
+
+        <div class="sheet-data-item">
+          <input type="checkbox" id="sheetBingoStatusOK" checked />
+          <label for="sheetBingoStatusOK" class="checkbox-label"
+            >Inventory OK (Bingo)?</label
+          >
+          <div
+            id="sheetBingoDetailsContainer"
+            style="display: none; margin-top: 5px"
+          >
+            <label for="sheetBingoDetails"
+              >Bingo Issues (e.g., #34v, #3m):</label
+            >
+            <input
+              type="text"
+              id="sheetBingoDetails"
+              placeholder="#ID void/missing"
+            />
+          </div>
+        </div>
+        <div class="sheet-data-item">
+          <label>Materials (approx. from PDF, please verify):</label>
+          <div class="materials-input-container">
+            <div class="material-item">
+              <label for="sheetMatTV" class="material-label">TV Boxes:</label>
+              <input
+                type="number"
+                id="sheetMatTV"
+                placeholder="0"
+                min="0"
+                class="material-input"
+              />
+            </div>
+            <div class="material-item">
+              <label for="sheetMatWR" class="material-label">Wardrobes:</label>
+              <input
+                type="number"
+                id="sheetMatWR"
+                placeholder="0"
+                min="0"
+                class="material-input"
+              />
+            </div>
+            <div class="material-item">
+              <label for="sheetMatBL" class="material-label">Blankets:</label>
+              <input
+                type="number"
+                id="sheetMatBL"
+                placeholder="0"
+                min="0"
+                class="material-input"
+              />
+            </div>
+          </div>
+          <small
+            id="pdfMaterialCounts"
+            style="
+              color: var(--text-secondary);
+              display: block;
+              margin-top: 3px;
+            "
+          ></small>
+        </div>
+
+        <div class="output-group">
+          <label for="sheetOutputString"
+            >Formatted String for Google Sheets:</label
+          >
+          <textarea id="sheetOutputString" readonly rows="2"></textarea>
+          <div
+            style="
+              margin-top: 10px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 10px;
+              align-items: center;
+            "
+          >
+            <button id="copySheetStringBtn" style="margin-top: 0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                class="bi bi-clipboard-check"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0"
+                />
+                <path
+                  d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
+                />
+                <path
+                  d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"
+                />
+              </svg>
+              Copy Sheet String
+            </button>
+            <button
+              id="createShareReportBtn"
+              class="report-button button-simple-pink"
+              style="margin-top: 0"
+            >
+              <img
+                src="assets/logo.png"
+                alt="Logo"
+                class="icon"
+                id="reportButtonIcon"
+                style="display: none"
+              />
+              <span class="button-text-content">Create Report</span>
+            </button>
+          </div>
+          <div
+            id="pdfGenerateLoader"
+            class="loader"
+            style="margin-left: 0; margin-right: auto; margin-top: 10px"
+          ></div>
+          <div id="pdfGenerateStatus"></div>
+          <div id="sheetDataStatus"></div>
+        </div>
+      </div>
+
+      <button id="viewPdfBtn" onclick="openPdfModal()">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-eye-fill"
+          viewBox="0 0 16 16"
+        >
+          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+          <path
+            d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"
+          />
+        </svg>
+        View PDF
+      </button>
+
+      <div id="pdfModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Uploaded PDF Document</h3>
+            <span
+              id="closePdfModalBtn"
+              class="modal-close-button-fixed"
+              title="Close PDF Viewer"
+              >&times;</span
+            >
+          </div>
+          <div id="pdfViewerContainer"></div>
+          <div class="pdf-page-navigation">
+            <button id="prevPage">Previous</button>
+            <span
+              >Page <span id="currentPageNum">0</span> of
+              <span id="totalPagesNum">0</span></span
+            >
+            <button id="nextPage">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-section hyperlink-config-section">
+        <h2>Google Sheets Hyperlink Formula Generator</h2>
+        <div class="sheet-data-item">
+          <label for="spreadsheetIdInput">Spreadsheet ID:</label>
+          <input
+            type="text"
+            id="spreadsheetIdInput"
+            placeholder="Enter Google Spreadsheet ID (will be saved)"
+          />
+        </div>
+        <div class="sheet-data-item">
+          <label for="sheetNameInput">Sheet Name (e.g., MM/DD/YYYY):</label>
+          <input
+            type="text"
+            id="sheetNameInput"
+            placeholder="Default: current date"
+          />
+        </div>
+        <div class="sheet-data-item">
+          <label for="startRowInput"
+            >Start Row for Formula in Sheet (e.g., 6):</label
+          >
+          <input
+            type="number"
+            id="startRowInput"
+            value="6"
+            min="1"
+            placeholder="Enter starting row number"
+          />
+        </div>
+        <button id="generateSheetFormulaBtn">
+          Generate Google Sheets Formula
+        </button>
+        <div class="output-group" style="margin-top: 10px">
+          <label for="generatedHyperlinkOutput"
+            >Copy this formula into the first cell (e.g., A6) and drag
+            down:</label
+          >
+          <textarea id="generatedHyperlinkOutput" readonly rows="4"></textarea>
+        </div>
+      </div>
+
+      <div class="report-section pallet-paper-section">
+        <h2>Data for Pallet Paper</h2>
+        <div class="pallet-data-display">
+          <div>Job Number: <span id="palletJobNumber"></span></div>
+          <div>Client Name: <span id="palletClientName"></span></div>
+          <div>Date: <span id="palletCurrentDate"></span></div>
+        </div>
+        <button id="copyPalletDataBtn">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            class="bi bi-clipboard-plus"
+            viewBox="0 0 16 16"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"
+            />
+            <path
+              d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
+            />
+            <path
+              d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
+            />
+          </svg>
+          Copy for Pallet Paper
+        </button>
+        <div id="palletDataStatus"></div>
       </div>
     </div>
-    <div class="output-group">
-        <label for="sheetOutputString">Formatted String for Google Sheets:</label>
-        <textarea id="sheetOutputString" readonly rows="2"></textarea>
-        <button onclick="copySheetString()" style="margin-top:10px;">📋 Copy Sheet String</button>
-        <div id="sheetDataStatus"></div>
-    </div>
-    <button id="resetSheetDataBtn" onclick="resetSheetDataForm()" class="secondary" style="margin-top:10px;">Reset Sheet Data Fields</button>
-  </div>
-
-  <div id="debugToggle" onclick="toggleDebug()">Show Extracted PDF Text</div>
-  <pre id="debugText"></pre>
-  <button id="viewPdfBtn" onclick="openPdfModal()">📄 View PDF</button>
-  <div id="pdfModal" class="modal">
-    <div class="modal-content">
-      <div class="modal-header"><h3>Uploaded PDF Document</h3></div>
-      <span class="modal-close-button-fixed" onclick="closePdfModal()">&times;</span>
-      <div id="pdfViewerContainer"></div>
-      <div class="pdf-page-navigation">
-        <button id="prevPage">Previous</button>
-        <span>Page <span id="currentPageNum">0</span> of <span id="totalPagesNum">0</span></span>
-        <button id="nextPage">Next</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-  <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
-
-    let isReportGenerated = false;
-    let loadedPdfDocument = null;
-    let currentPageInView = 1;
-    const attentionFieldIds = ['wooden', 'corners', 'volume'];
-    const sheetDataInputIds = ['sheetWarehouse', 'sheetAddress', 'sheetPallets', 'sheetItems', 'sheetEmployeeName', 'sheetBingoStatusOK', 'sheetBingoDetails', 'sheetMatTV', 'sheetMatWR', 'sheetMatBL'];
-
-    const questions = [
-      { id: "sofa", text: "Sofa is full shrinked and wrapped in blankets:", options: ["YES", "NO", "NO SOFA"], itemName: "Sofa" },
-      { id: "mattress", text: "Mattress in box, full shrinked and wrapped in blankets:", options: ["YES", "NO", "NO MATTRESS"], itemName: "Mattress" },
-      { id: "wardrobe", text: "Wardrobe with only clothes/pillows inside:", options: ["YES", "NO", "NO WARDROBE"], itemName: "Wardrobe" },
-      { id: "tvbox", text: "TV Box with only TV or Paintings inside:", options: ["YES", "NO", "NO TV BOX"], itemName: "TV Box" },
-      { id: "paintings", text: "Paintings or glass in TV Box are separated from each other by boxes:", options: ["YES", "NO", "NO PAINTING/GLASS"], itemName: "Paintings/Glass" },
-      { id: "corners", text: "Corners/Cardboard are placed on all furniture where required:", options: ["YES", "NO", "NO NEED"], itemName: "Corners/Cardboard" },
-      { id: "wooden", text: "Wooden items are full wrapped in blankets:", options: ["YES", "NO", "NO WOODEN PARTS"], itemName: "Wooden Items" },
-      { id: "leather", text: "Leather items are wrapped in blankets without shrink:", options: ["YES", "NO", "NO LEATHER ITEMS"], itemName: "Leather Items" },
-      { id: "suitcases", text: "Suitcases are full shrinked:", options: ["YES", "NO", "NO SUITCASES"], itemName: "Suitcases" },
-      { id: "lamps", text: "Lamps in Boxes/Bubble wrap:", options: ["YES", "NO", "NO LAMPS"], itemName: "Lamps" },
-      { id: "bikes", text: "Bicycle/Peloton is full wrapped in blankets:", options: ["YES", "NO", "NO BIKES"], itemName: "Bicycle/Peloton" },
-      { id: "rugs", text: "Rugs/Carpets are full shrinked:", options: ["YES", "NO", "NO RUGS"], itemName: "Rugs/Carpets" },
-      { id: "hardware", text: "Hardware Box:", options: ["YES", "NO", "NO NEEDED"], itemName: "Hardware Box" },
-      { id: "volume", text: "The CuFt volume of the job is correct :", options: ["YES", "NO"], itemName: "CuFt Volume" }
-    ];
-    const defaultValuesConfig = {
-      sofa: "NO SOFA", mattress: "NO MATTRESS", wardrobe: "NO WARDROBE", tvbox: "NO TV BOX",
-      paintings: "NO PAINTING/GLASS", corners: "YES", wooden: "YES", leather: "NO LEATHER ITEMS",
-      suitcases: "NO SUITCASES", lamps: "NO LAMPS", bikes: "NO BIKES", rugs: "NO RUGS",
-      hardware: "NO NEEDED", volume: "YES"
-    };
-    const keywordMap = {
-      sofa: ["sofa", "couch", "ottoman", "loveseat", "settee", "sectional", "sofa bed"], // Added more sofa synonyms
-      mattress: ["mattress", "box spring", "boxspring"], // Added box spring
-      wardrobe: ["wardrobe", "wardrobe box", "armoire"],
-      tvbox: ["tv box", "tvbox"],
-      paintings: ["painting", "glass", "picture", "art", "canvas", "mirror"], leather: ["leather"],
-      suitcases: ["suitcase"], lamps: ["lamp"], bikes: ["bike", "bicycle", "peloton", "exercise bike"],
-      rugs: ["rug", "carpet"], hardware: ["hardware", "hardware box"]
-    };
-
-    const fieldContainer = document.getElementById("fields");
-    const allInputElementsForReset = [];
-
-    function applyAttentionHighlight(element) { /* ... Same ... */ element.classList.remove('field-requires-attention'); if (attentionFieldIds.includes(element.id) && element.value === 'YES' && element.dataset.status !== 'user-modified') { element.classList.add('field-requires-attention'); }}
-    function setFieldStatus(element, status) { /* ... Same ... */ element.classList.remove('field-initial-default', 'field-pdf-informed', 'field-user-modified', 'field-requires-attention'); element.classList.add(`field-${status}`); element.dataset.status = status; applyAttentionHighlight(element); if (isReportGenerated && status === 'user-modified' && !sheetDataInputIds.includes(element.id) ) { resetGenerateButton(); }}
-
-    questions.forEach(q => { /* ... Same ... */
-      const questionDiv = document.createElement("div"); questionDiv.className = "question-item"; const label = document.createElement("label"); label.htmlFor = q.id; label.textContent = "• " + q.text; questionDiv.appendChild(label); const select = document.createElement("select"); select.id = q.id; select.dataset.itemId = q.id; select.dataset.itemName = q.itemName; q.options.forEach(optText => { const o = document.createElement("option"); o.text = optText; o.value = optText; select.add(o); }); questionDiv.appendChild(select); allInputElementsForReset.push(select); const commentContainer = document.createElement("div"); commentContainer.id = `no_comment_container_${q.id}`; commentContainer.className = "no-comment-container"; commentContainer.style.display = "none"; const commentTextarea = document.createElement("textarea"); commentTextarea.id = `no_comment_textarea_${q.id}`; commentTextarea.className = "no-comment-input"; commentTextarea.placeholder = `Details for ${q.itemName} (NO)...`; commentContainer.appendChild(commentTextarea); questionDiv.appendChild(commentContainer); allInputElementsForReset.push(commentTextarea); fieldContainer.appendChild(questionDiv); select.addEventListener('change', (event) => { handleNoSelection(event); setFieldStatus(select, 'user-modified'); }); commentTextarea.addEventListener('input', () => { setFieldStatus(commentTextarea, 'user-modified'); }); if (defaultValuesConfig[q.id]) { select.value = defaultValuesConfig[q.id]; } setFieldStatus(select, 'initial-default'); setFieldStatus(commentTextarea, 'initial-default'); if (select.value === "NO") { select.dispatchEvent(new Event('change')); }
-    });
-     ['clientName', 'job', 'generalComments', 'rating'].forEach(id => { /* ... Same ... */ const element = document.getElementById(id); if (element) { allInputElementsForReset.push(element); const eventType = element.tagName === 'SELECT' ? 'change' : 'input'; element.addEventListener(eventType, () => setFieldStatus(element, 'user-modified')); setFieldStatus(element, 'initial-default'); }});
-
-    function handleNoSelection(event) { /* ... Same ... */ const selectElement = event.target; const itemId = selectElement.dataset.itemId; const itemName = selectElement.dataset.itemName; const commentContainer = document.getElementById(`no_comment_container_${itemId}`); const commentTextarea = document.getElementById(`no_comment_textarea_${itemId}`); const noCommentTemplate = `${itemName} (NO): `; if (selectElement.value === "NO") { if (commentTextarea.value.trim() === "" || commentTextarea.dataset.status !== 'user-modified') { commentTextarea.value = noCommentTemplate; } commentContainer.style.display = "block"; } else { commentContainer.style.display = "none"; }}
-
-    async function readPDF(file) {
-        const buffer = await file.arrayBuffer();
-        const pdfDoc = await pdfjsLib.getDocument({ data: buffer }).promise;
-        loadedPdfDocument = pdfDoc;
-        let fullText = "";
-        let inventoryLines = []; // For more structured material counting
-
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-            const page = await pdfDoc.getPage(i);
-            const content = await page.getTextContent();
-            let pageText = content.items.map(item => item.str).join(" ");
-            fullText += pageText + "\n";
-
-            // Try to identify inventory lines for material counting (very basic)
-            // This assumes inventory items are listed line by line and PACK TYPE is somewhat consistent
-            let potentialLines = pageText.split(/\s*\n\s*/); // Split by newline, crude
-            content.items.forEach(item => { // A slightly better way than splitting by newline
-                if(item.str.trim().match(/^\d+/) && item.str.length < 5) { // if item starts with a number (ID)
-                    // This isn't perfect, but let's assume the line starts around here
-                    // For now, we'll use a simpler line split from fullText later
-                }
-            });
-        }
-        inventoryLines = fullText.toLowerCase().split('\n');
-
-
-        // Item Count - Regex updated for space before colon
-        const itemCountMatch = fullText.match(/Number of Pieces\s*:\s*(\d+)/i);
-        const itemCountEl = document.getElementById('sheetItems');
-        const pdfItemCountEl = document.getElementById('pdfItemCount');
-        if (itemCountMatch && itemCountMatch[1]) {
-            itemCountEl.value = itemCountMatch[1];
-            pdfItemCountEl.textContent = `(PDF says: ${itemCountMatch[1]} pieces)`;
-            setFieldStatus(itemCountEl, 'pdf-informed');
-        } else {
-            pdfItemCountEl.textContent = "(Item count not found in PDF)";
-            setFieldStatus(itemCountEl, 'initial-default');
-        }
-
-        // Material Counting from "PACK TYPE"
-        let tvCount = 0; let wrCount = 0; let blCount = 0;
-        inventoryLines.forEach(line => {
-            // These need to be fairly specific to avoid matching "tv" in "tv stand" if "tv stand" isn't a PACK TYPE
-            // This is still an approximation. "PACK TYPE" column isn't explicitly parsed.
-            if (/\b(tv box|tvbox)\b/i.test(line) && !line.includes("content")) tvCount++; // Check for "tv box" as whole words, avoid matching in "content" descriptions
-            if (/\b(wardrobe box)\b/i.test(line)&& !line.includes("content")) wrCount++;
-            if (/\b(blanket|blankets)\b/i.test(line) && !line.includes("content") && (line.includes("pack type") || line.split(/\s\s+/).length > 3) ) { // If 'blanket' appears and it looks like an inventory line (crudely)
-                 // This will count ITEMS packed in blankets, not total blankets. User must verify.
-                 blCount++;
-            }
-        });
-
-        const sheetMatTVEl = document.getElementById('sheetMatTV');
-        const sheetMatWREl = document.getElementById('sheetMatWR');
-        const sheetMatBLEl = document.getElementById('sheetMatBL');
-
-        sheetMatTVEl.value = tvCount > 0 ? tvCount : "";
-        sheetMatWREl.value = wrCount > 0 ? wrCount : "";
-        sheetMatBLEl.value = blCount > 0 ? blCount : ""; // This is count of items packed in blankets
-        document.getElementById('pdfMaterialCounts').textContent = `(Approx. PACK TYPES from PDF: ${tvCount} TV Box, ${wrCount} Wardrobe Box, ${blCount} Blanket-Wrapped Items)`;
-        setFieldStatus(sheetMatTVEl, tvCount > 0 ? 'pdf-informed' : 'initial-default');
-        setFieldStatus(sheetMatWREl, wrCount > 0 ? 'pdf-informed' : 'initial-default');
-        setFieldStatus(sheetMatBLEl, blCount > 0 ? 'pdf-informed' : 'initial-default');
-
-
-        updateSheetOutputString();
-        return fullText;
-    }
-
-    document.getElementById("pdfFile").addEventListener("change", async e => { /* ... PDF processing ... */
-      const file = e.target.files[0]; const pdfStatus = document.getElementById("pdfStatus"); const viewPdfBtn = document.getElementById("viewPdfBtn");
-      loadedPdfDocument = null; viewPdfBtn.style.display = 'none'; if (!file) { pdfStatus.textContent = "No file selected."; return; }
-      pdfStatus.textContent = `Loading ${file.name}...`;
-      try {
-        const rawText = await readPDF(file); const lowerCaseText = rawText.toLowerCase();
-        document.getElementById("debugText").textContent = rawText || "(no text found)"; pdfStatus.textContent = `Successfully loaded: ${file.name}`;
-        viewPdfBtn.style.display = 'inline-block'; currentPageInView = 1;
-        let jobNumber = "", clientName = "";
-        /* Extraction Logic for jobNumber and clientName */
-        const jobRegexPatterns = [/Shipment Number\s*.*?(\b\d{5,}\b)/i, /Job number\s*.*?(\b\d{5,}\b)/i];
-        for (const pattern of jobRegexPatterns) { const jobMatch = rawText.match(pattern); if (jobMatch && jobMatch[1]) { jobNumber = jobMatch[1]; break; } }
-        if (!jobNumber) { const simpleJobMatch = rawText.match(/(?:Shipment Number|Job number)\s*(\d{5,})/i); if(simpleJobMatch && simpleJobMatch[1]){ jobNumber = simpleJobMatch[1];} }
-        const shipperNameRegex = /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])(?=\s*(?:Shipment Number|PIECE OF CAKE|USDOT|\d{2}\/\d{2}\/\d{4}|Origin Loading Address))/i;
-        let nameMatch = rawText.match(shipperNameRegex);
-        if (nameMatch && nameMatch[1]) clientName = nameMatch[1].replace(/[\n\r]+/g, ' ').trim();
-        else if (jobNumber) { try { const nameBetweenRegex = new RegExp(`Shipment\\s*Number\\s*([A-Za-z][A-Za-z\\s'-]*[A-Za-z])\\s*${jobNumber}`, "i"); nameMatch = rawText.match(nameBetweenRegex); if (nameMatch && nameMatch[1]) clientName = nameMatch[1].trim(); } catch (regexError) { console.error("Regex error for client name:", regexError); }}
-        if (!clientName) { const customerSigRegex = /Customer Signature(?:[\s\S]*?Date[\s\S]*?){2}([A-Za-z\s'-]+?)(?:\n|\r|X\s|$)/i; nameMatch = rawText.match(customerSigRegex); if (nameMatch && nameMatch[1]) { let sigName = nameMatch[1].replace(/packer pac/i, '').replace(/Date/i, '').trim(); if (sigName.length > 1 && sigName.toLowerCase() !== 'x' && sigName.split(/\s+/).length <= 3) clientName = sigName; }}
-        const clientNameEl = document.getElementById("clientName"); clientNameEl.value = clientName ? clientName.split(/\s+/).map(p=>p.charAt(0).toUpperCase()+p.slice(1).toLowerCase()).filter(Boolean).join(" ") : "";
-        setFieldStatus(clientNameEl, clientName ? 'pdf-informed' : 'initial-default');
-        const jobEl = document.getElementById("job"); jobEl.value = jobNumber;
-        setFieldStatus(jobEl, jobNumber ? 'pdf-informed' : 'initial-default');
-
-        questions.forEach(q => { /* ... Question fields update ... */
-          const select = document.getElementById(q.id); const keywords = keywordMap[q.id] || [];
-          let itemFound = keywords.length > 0 && keywords.some(kw => lowerCaseText.includes(kw.toLowerCase()));
-          let currentStatus = 'pdf-informed';
-          if (attentionFieldIds.includes(q.id)) { select.value = defaultValuesConfig[q.id]; }
-          else if (itemFound) { select.value = "YES"; }
-          else { select.value = defaultValuesConfig[q.id] || q.options.find(opt => opt.startsWith("NO ")) || q.options[1]; }
-          setFieldStatus(select, currentStatus);
-          if (select.value === "NO") { select.dispatchEvent(new Event('change')); }
-        });
-        resetGenerateButton();
-      } catch (err) { /* ... error handling ... */ pdfStatus.textContent = "Failed to read PDF."; console.error("Error reading PDF:", err); alert("Error reading PDF file. Check console for details."); viewPdfBtn.style.display = 'none';}
-    });
-
-    function resetGenerateButton() { /* ... same ... */ const generateBtn = document.getElementById("generateReportBtn"); generateBtn.textContent = "Generate Report"; generateBtn.classList.remove("generated"); const genStatusMsg = document.getElementById("generationStatusMsg"); genStatusMsg.textContent = ""; genStatusMsg.className = ""; isReportGenerated = false; }
-    function generateReport() { /* ... same ... */ const generateBtn = document.getElementById("generateReportBtn"); const generationStatusMsg = document.getElementById("generationStatusMsg"); generationStatusMsg.textContent = ""; generationStatusMsg.className = ""; let allNoCommentsValid = true; let missingCommentsMessages = []; questions.forEach(q => { const selectElement = document.getElementById(q.id); const commentTextarea = document.getElementById(`no_comment_textarea_${q.id}`); commentTextarea.style.borderColor = "var(--dark-blue-border)"; if (selectElement.value === "NO") { const itemName = selectElement.dataset.itemName; const templatePrefix = `${itemName} (NO): `; const currentComment = commentTextarea.value.trim(); if (currentComment === "" || currentComment === templatePrefix.trim()) { allNoCommentsValid = false; missingCommentsMessages.push(`Comment for "${q.itemName}" (NO) is required.`); commentTextarea.style.borderColor = "red";}}}); if (!allNoCommentsValid) { generationStatusMsg.textContent = "Validation failed. Please check comments."; generationStatusMsg.className = "error"; alert("Please provide valid comments for all items marked 'NO':\n\n" + missingCommentsMessages.join("\n")); return; } const getVal = id => document.getElementById(id).value; let report = `• Client Last Name:\n${getVal("clientName")}\n`; report += `• Job number:\n${getVal("job")}\n`; questions.forEach(q => { report += `• ${q.text}\n${getVal(q.id)}\n`; }); let collectedComments = []; questions.forEach(q => { if (document.getElementById(q.id).value === "NO") { const commentText = document.getElementById(`no_comment_textarea_${q.id}`).value.trim(); if (commentText) collectedComments.push("• " + commentText); } }); const generalCommentsVal = document.getElementById("generalComments").value.split("\n").map(l => l.trim()).filter(Boolean).map(l => "• " + l); const allComments = [...collectedComments, ...generalCommentsVal].join("\n"); report += `Comments (each "NO" in report should have comment here):\n${allComments.length > 0 ? allComments : "• None"}\n\nRating ${getVal("rating")}`; document.getElementById("output").textContent = report.trim(); generateBtn.textContent = "Generated! ✔"; generateBtn.classList.add("generated"); generationStatusMsg.textContent = "Report generated successfully!"; generationStatusMsg.className = "success"; isReportGenerated = true; }
-
-    // --- Google Sheets Data Functions ---
-    function updateSheetOutputString() {const warehouse = document.getElementById('sheetWarehouse').value; const address = document.getElementById('sheetAddress').value.trim(); const palletsVal = document.getElementById('sheetPallets').value; const pallets = palletsVal && parseInt(palletsVal) > 0 ? `${palletsVal}pal` : ""; const itemsVal = document.getElementById('sheetItems').value; const items = itemsVal ? `${itemsVal}itm` : ""; const employeeName = document.getElementById('sheetEmployeeName').value.trim(); let bingoStatus; if (document.getElementById('sheetBingoStatusOK').checked) { bingoStatus = "bingo"; } else { bingoStatus = document.getElementById('sheetBingoDetails').value.trim() || "issue_not_specified"; } const matTV = document.getElementById('sheetMatTV').value; const matWR = document.getElementById('sheetMatWR').value; const matBL = document.getElementById('sheetMatBL').value; let materialsArray = []; if (matTV && parseInt(matTV) > 0) materialsArray.push(`${matTV}tv`); if (matWR && parseInt(matWR) > 0) materialsArray.push(`${matWR}wr`); if (matBL && parseInt(matBL) > 0) materialsArray.push(`${matBL}bl`); const materialsString = materialsArray.join(','); const outputArray = [warehouse, address, pallets, items, employeeName, bingoStatus, materialsString]; document.getElementById('sheetOutputString').value = outputArray.filter(s => s && s.trim() !== "").join(' | ');}
-    function copySheetString() { /* ... Same ... */ const textToCopy = document.getElementById('sheetOutputString').value; const statusDiv = document.getElementById('sheetDataStatus'); if (!textToCopy) { statusDiv.textContent = "Nothing to copy."; statusDiv.className="error"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 2000); return; } navigator.clipboard.writeText(textToCopy).then(() => { statusDiv.textContent = "Sheet string copied!"; statusDiv.className="success"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 2000); }).catch(err => { console.error("Sheet string copy failed:", err); statusDiv.textContent = "Copy failed. Try manual."; statusDiv.className="error"; setTimeout(() => { statusDiv.textContent = ""; statusDiv.className="";}, 3000); }); }
-    function resetSheetDataForm() { sheetDataInputIds.forEach(id => { const element = document.getElementById(id); if (element.type === 'checkbox') { element.checked = (id === 'sheetBingoStatusOK'); } else if (element.tagName === 'SELECT') {element.value = "";} else {element.value = "";}}); document.getElementById('sheetBingoDetailsContainer').style.display = 'none'; document.getElementById('pdfItemCount').textContent = ""; document.getElementById('pdfMaterialCounts').textContent = ""; loadSheetDataFromLocalStorage(); updateSheetOutputString(); }
-    function saveSheetDataToLocalStorage() { localStorage.setItem('sheetEmployeeName', document.getElementById('sheetEmployeeName').value); localStorage.setItem('sheetWarehouse', document.getElementById('sheetWarehouse').value); }
-    function loadSheetDataFromLocalStorage() { const savedName = localStorage.getItem('sheetEmployeeName'); const savedWarehouse = localStorage.getItem('sheetWarehouse'); if (savedName) document.getElementById('sheetEmployeeName').value = savedName; if (savedWarehouse) document.getElementById('sheetWarehouse').value = savedWarehouse; }
-    sheetDataInputIds.forEach(id => { const element = document.getElementById(id); if (element) { element.addEventListener('input', updateSheetOutputString); element.addEventListener('change', updateSheetOutputString); if (id === 'sheetEmployeeName' || id === 'sheetWarehouse') { element.addEventListener('change', saveSheetDataToLocalStorage); } }});
-    document.getElementById('sheetBingoStatusOK').addEventListener('change', function() { document.getElementById('sheetBingoDetailsContainer').style.display = this.checked ? 'none' : 'block'; if (this.checked) { document.getElementById('sheetBingoDetails').value = ''; } updateSheetOutputString(); });
-
-    // --- PDF Modal Functions ---
-    async function renderPdfPage(pdfDoc, pageNum, canvas) { /* ... */ } async function displayPdfPageInModal(pageNum) { /* ... */ } function openPdfModal() { /* ... */ } function closePdfModal() { /* ... */ }
-    document.getElementById('prevPage').addEventListener('click', () => { if (currentPageInView > 1) displayPdfPageInModal(currentPageInView - 1); });
-    document.getElementById('nextPage').addEventListener('click', () => { if (loadedPdfDocument && currentPageInView < loadedPdfDocument.numPages) displayPdfPageInModal(currentPageInView + 1); });
-    // (Re-pasting the PDF modal functions for completeness if they were shortened above)
-    async function renderPdfPage(pdfDoc, pageNum, canvas) {const page = await pdfDoc.getPage(pageNum); const viewport = page.getViewport({ scale: 1.5 }); canvas.height = viewport.height; canvas.width = viewport.width; const renderContext = { canvasContext: canvas.getContext('2d'), viewport: viewport }; await page.render(renderContext).promise;}
-    async function displayPdfPageInModal(pageNum) {if (!loadedPdfDocument || pageNum < 1 || pageNum > loadedPdfDocument.numPages) return; currentPageInView = pageNum; const viewerContainer = document.getElementById('pdfViewerContainer'); viewerContainer.innerHTML = ''; const canvas = document.createElement('canvas'); viewerContainer.appendChild(canvas); document.getElementById('currentPageNum').textContent = currentPageInView; document.getElementById('totalPagesNum').textContent = loadedPdfDocument.numPages; document.getElementById('prevPage').disabled = currentPageInView <= 1; document.getElementById('nextPage').disabled = currentPageInView >= loadedPdfDocument.numPages; try { await renderPdfPage(loadedPdfDocument, currentPageInView, canvas); } catch (error) { console.error("Error rendering PDF page:", error); viewerContainer.textContent = "Error rendering PDF page."; }}
-    function openPdfModal() { if (!loadedPdfDocument) { alert("Please upload a PDF file first."); return; } document.getElementById('pdfModal').style.display = 'flex'; displayPdfPageInModal(currentPageInView); }
-    function closePdfModal() { document.getElementById('pdfModal').style.display = 'none'; document.getElementById('pdfViewerContainer').innerHTML = ''; }
-
-
-    // --- Clipboard and Utility Functions ---
-    function copyToClipboardNew() { /* ... */ } function copyToClipboardFallback() { /* ... */ } function selectText() { /* ... */ } function toggleDebug() { /* ... */ }
-    // (Re-pasting clipboard and utility for completeness if shortened)
-    function copyToClipboardNew() {const textToCopy = document.getElementById("output").textContent; if (!textToCopy) { alert("Please generate the report first."); return; } if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(textToCopy).then(() => alert("Report copied to clipboard!")).catch(err => { console.error("Async copy failed:", err); copyToClipboardFallback(); }); } else { copyToClipboardFallback(); }}
-    function copyToClipboardFallback() {const textToCopy = document.getElementById("output").textContent; if (!textToCopy) { return; } const textArea = document.createElement("textarea"); textArea.value = textToCopy; textArea.style.position = "fixed"; textArea.style.top = "-9999px"; textArea.style.left = "-9999px"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); try { if (document.execCommand('copy')) alert('Report copied using old method!'); else alert('Old method copy failed.'); } catch (err) { console.error("Fallback copy failed:", err); alert('Old method copy failed.'); } document.body.removeChild(textArea);}
-    function selectText() {const output = document.getElementById("output"); if (output.textContent === "") { alert("Please generate the report first."); return; } const range = document.createRange(); range.selectNodeContents(output); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);}
-    function toggleDebug() {const dbg = document.getElementById("debugText"); const toggle = document.getElementById("debugToggle"); const isVisible = dbg.style.display === "block"; dbg.style.display = isVisible ? "none" : "block"; toggle.textContent = isVisible ? "Show Extracted PDF Text" : "Hide Extracted PDF Text";}
-
-
-    window.onload = () => { /* ... Same field init ... */
-        questions.forEach(q => { const select = document.getElementById(q.id); if (defaultValuesConfig[q.id]) { select.value = defaultValuesConfig[q.id]; } setFieldStatus(select, 'initial-default'); const commentTextarea = document.getElementById(`no_comment_textarea_${q.id}`); setFieldStatus(commentTextarea, 'initial-default'); if (select.value === "NO") { handleNoSelection({ target: select }); }});
-        ['clientName', 'job', 'generalComments', 'rating'].forEach(id => { const element = document.getElementById(id); if(element) setFieldStatus(element, 'initial-default'); });
-        allInputElementsForReset.forEach(el => { const eventType = (el.tagName === 'SELECT' || el.id === 'rating') ? 'change' : 'input'; el.removeEventListener(eventType, resetGenerateButton); el.addEventListener(eventType, resetGenerateButton); });
-        loadSheetDataFromLocalStorage(); updateSheetOutputString();
-        document.getElementById('sheetBingoDetailsContainer').style.display = document.getElementById('sheetBingoStatusOK').checked ? 'none' : 'block';
-    };
-  </script>
-</body>
+    <script src="js/config.js" defer></script>
+    <script src="js/localStorageHandler.js" defer></script>
+    <script src="js/uiHandler.js" defer></script>
+    <script src="js/photoHandler.js" defer></script>
+    <script src="js/pdfHandler.js" defer></script>
+    <script src="js/formHandler.js" defer></script>
+    <script src="js/reportGenerator.js" defer></script>
+    <script src="js/qrScanner.js" defer></script>
+    <script src="js/main.js" defer></script>
+  </body>
 </html>

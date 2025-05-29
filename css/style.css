@@ -1,0 +1,955 @@
+:root {
+  --company-pink: #f04e98;
+  --knicks-orange-accent: #f58426;
+  --knicks-blue-accent: #006bb6;
+  --text-light: #ffffff;
+  --danger-red: #dc3545;
+  --danger-red-light: #f8d7da;
+
+  /* Light Theme (Default) */
+  --primary-bg: #f4f6f8;
+  --secondary-bg: #ffffff;
+  --text-primary: #1f2937;
+  --text-secondary: #4b5563;
+  --border-color: #d1d5db;
+  --input-bg: #ffffff;
+  --input-text: #1f2937;
+  --input-border: #ccc;
+  --status-initial-bg: #f3f4f6;
+  --status-initial-border: #9ca3af;
+  --status-pdf-bg: #d1fae5;
+  --status-pdf-border: #10b981;
+  --status-user-bg: #dbeafe;
+  --status-user-border: var(--knicks-blue-accent);
+  --status-attention-bg: #fffbeb;
+  --status-attention-border: var(--knicks-orange-accent);
+  --button-secondary-bg: #6b7280;
+  --button-secondary-hover-bg: #4b5563;
+  --debug-bg: #f9fafb;
+  --debug-border: #e5e7eb;
+  --modal-content-bg: #ffffff;
+  --modal-viewer-bg: #e9ecef;
+  --modal-header-border: #eee;
+  --modal-text: #333;
+  --loader-color: var(--company-pink);
+  --header-bg: #ffffff;
+  --photo-btn-bg: var(--knicks-blue-accent);
+  --photo-btn-text: var(--text-light);
+  --delete-icon-border: var(--text-light); /* Used for new ghost button */
+  --delete-icon-fill: var(--text-light); /* Used for new ghost button text */
+}
+
+html.dark-mode {
+  --primary-bg: #1a202c;
+  --secondary-bg: #2d3748;
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --border-color: #4a5568;
+  --input-bg: #2d3748;
+  --input-text: #e2e8f0;
+  --input-border: #4a5568;
+  --status-initial-bg: #3e4c5f;
+  --status-initial-border: #718096;
+  --status-pdf-bg: #2f5944;
+  --status-pdf-border: #38a169;
+  --status-user-bg: #2c5282;
+  --status-attention-bg: #4c331a;
+  --button-secondary-bg: #5a6268;
+  --button-secondary-hover-bg: #495057;
+  --debug-bg: #111722;
+  --debug-border: var(--border-color);
+  --modal-content-bg: var(--secondary-bg);
+  --modal-viewer-bg: var(--primary-bg);
+  --modal-header-border: var(--border-color);
+  --modal-text: var(--text-primary);
+  --header-bg: #2d3748;
+  --photo-btn-bg: var(--knicks-orange-accent);
+  --delete-icon-border: var(
+    --text-primary
+  ); /* Used for new ghost button in dark mode */
+  --delete-icon-fill: var(
+    --text-primary
+  ); /* Used for new ghost button text in dark mode */
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica,
+    Arial, sans-serif;
+  padding: 20px;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  line-height: 1.6;
+  margin: 0;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background-color: var(--header-bg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header-title-logo {
+  display: flex;
+  align-items: center;
+}
+.header-actions-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.clear-report-button {
+  background-color: var(--button-secondary-bg);
+  color: var(--text-light);
+  padding: 8px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1;
+  transition: background-color 0.2s ease, filter 0.2s ease;
+}
+.clear-report-button:hover {
+  filter: brightness(1.15);
+}
+.clear-report-button svg {
+  fill: var(--text-light);
+  width: 14px;
+  height: 14px;
+}
+
+.main-title {
+  font-size: 1.4em;
+  color: var(--company-pink);
+  margin: 0;
+  font-weight: 700;
+}
+@media (max-width: 768px) {
+  .main-title {
+    font-size: 1.2em;
+  }
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 15px;
+  }
+  .header-actions-wrapper {
+    align-self: flex-end;
+  }
+  .top-field-group {
+    flex-wrap: wrap;
+  }
+  .top-field-group > div {
+    flex-basis: 100%;
+    min-width: 100%;
+    margin-bottom: 10px;
+  }
+  .top-field-group > div:last-child {
+    margin-bottom: 0;
+  }
+  .photo-actions-container {
+    flex-direction: column;
+  }
+  .photo-actions-container .photo-action-button {
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .photo-actions-container .photo-action-button:last-child {
+    margin-bottom: 0;
+  }
+}
+
+h2 {
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--company-pink);
+  padding-bottom: 5px;
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+select,
+input[type="text"],
+input[type="number"],
+input[type="file"],
+textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  margin-top: 5px;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  border: 1px solid var(--input-border);
+  border-radius: 4px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease, background-color 0.3s ease,
+    border-left-color 0.3s ease;
+  border-left-width: 4px;
+}
+input[type="file"] {
+  padding: 6px;
+}
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+#generatedHyperlinkOutput {
+  min-height: 90px;
+  background-color: var(--primary-bg);
+  font-family: monospace;
+  font-size: 12px;
+}
+.no-comment-input {
+  margin-top: 8px;
+  min-height: 60px;
+}
+label {
+  display: block;
+  margin-top: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+input[type="checkbox"] {
+  width: auto;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+label.checkbox-label {
+  display: inline-block;
+  margin-top: 15px;
+  font-weight: normal;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.field-group {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 15px;
+  align-items: flex-start;
+}
+.field-group > div {
+  flex: 1;
+  min-width: 150px;
+}
+.responsive-field-group {
+  flex-wrap: wrap !important;
+}
+.responsive-field-group > div {
+  min-width: 180px;
+}
+
+.top-field-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-start;
+}
+.top-field-group > div {
+  flex: 1 1 250px;
+  min-width: 200px;
+}
+
+.field-initial-default {
+  background-color: var(--status-initial-bg);
+  border-left-color: var(--status-initial-border);
+}
+.field-pdf-informed {
+  background-color: var(--status-pdf-bg);
+  border-left-color: var(--status-pdf-border);
+}
+.field-user-modified {
+  background-color: var(--status-user-bg);
+  border-left-color: var(--status-user-border);
+}
+.field-requires-attention {
+  background-color: var(--status-attention-bg) !important;
+  border-left-color: var(--status-attention-border) !important;
+  font-weight: 500;
+}
+
+button {
+  /* General button styling - will be overridden by .report-button if applied */
+  margin-top: 20px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  margin-right: 10px;
+  background-color: var(--company-pink);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+button:hover {
+  filter: brightness(1.1);
+}
+button:active {
+  transform: scale(0.98);
+}
+button.secondary {
+  background-color: var(--button-secondary-bg);
+}
+button.secondary:hover {
+  filter: brightness(0.9);
+}
+/* Styles for the Create Report button, adapted from button3.html */
+.report-button {
+  /* This is the primary class for the new button style */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  gap: 8px;
+  transition: all 0.25s ease-out;
+  min-width: 220px; /* From button3 */
+  text-align: left; /* Align text to left when icon is present */
+  border: 1px solid transparent; /* From button3 */
+  position: relative;
+  overflow: hidden; /* From button3 */
+}
+
+.report-button .button-text-content {
+  flex-grow: 1; /* Allow text to take available space */
+}
+
+.report-button img.icon {
+  height: 30px;
+  width: auto;
+  max-width: 70px; /* Approx 350/166 * 30px */
+  object-fit: contain;
+  margin-right: 8px; /* Space between icon and text */
+}
+
+.button-simple-pink {
+  /* Specific style for pink button, adapted from button3.html */
+  background-color: var(--company-pink); /* Use existing variable */
+  color: var(--text-light); /* Text color for light mode */
+  border: 1px solid var(--border-color); /* Use existing variable, or a more subtle one if defined */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+html.dark-mode .button-simple-pink {
+  color: var(--text-primary); /* Text color for dark mode for contrast */
+  /* border-color can remain var(--border-color) as it also adapts for dark mode */
+}
+
+.button-simple-pink:hover {
+  background-color: var(--knicks-blue-accent); /* Use existing variable */
+  border-color: var(--knicks-blue-accent); /* Match border to bg on hover */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  /* Text color on hover should remain consistent due to background change */
+}
+/* End of Create Report button styles */
+
+#viewPdfBtn {
+  display: none;
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1040;
+  background-color: var(--company-pink);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-top: 0;
+  padding: 10px 15px;
+  border-radius: 50px;
+}
+#viewPdfBtn:hover {
+  filter: brightness(1.15);
+}
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: var(--secondary-bg);
+  color: var(--text-primary);
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  margin-top: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+#pdfStatus {
+  color: #48bb78;
+  margin-top: 5px;
+  font-size: 0.9em;
+}
+#pdfGenerateStatus,
+#sheetDataStatus,
+#palletDataStatus {
+  min-height: 20px;
+  margin-top: 10px;
+  font-weight: 500;
+}
+#pdfGenerateStatus.success,
+#sheetDataStatus.success,
+#palletDataStatus.success {
+  color: #48bb78;
+}
+#pdfGenerateStatus.error,
+#sheetDataStatus.error,
+#palletDataStatus.error {
+  color: #fc8181;
+}
+
+.report-section {
+  margin-bottom: 20px;
+  padding: 20px;
+  background: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+.question-item,
+.sheet-data-item {
+  margin-bottom: 15px;
+}
+.no-comment-container {
+  margin-top: 5px;
+  padding-left: 10px;
+  border-left: 3px solid var(--knicks-orange-accent);
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1050;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: rgba(0, 0, 0, 0.7);
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background-color: var(--modal-content-bg);
+  color: var(--modal-text);
+  margin: auto;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  width: 90%;
+  max-width: 800px;
+  border-radius: 8px;
+  position: relative;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid var(--modal-header-border);
+  flex-shrink: 0;
+}
+.modal-header h3 {
+  margin: 0;
+  color: var(--company-pink);
+  font-size: 1.1em;
+}
+.modal-close-button-fixed {
+  color: var(--text-secondary);
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0 5px;
+  line-height: 1;
+}
+.modal-close-button-fixed:hover {
+  color: var(--text-primary);
+}
+#pdfViewerContainer {
+  width: 100%;
+  flex-grow: 1;
+  overflow-y: auto;
+  background: var(--modal-viewer-bg);
+  padding: 5px;
+  text-align: center;
+}
+#pdfViewerContainer canvas {
+  margin-bottom: 10px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+  max-width: 100%;
+  height: auto !important;
+  background-color: white;
+}
+.pdf-page-navigation {
+  text-align: center;
+  padding: 8px 0;
+  background-color: var(--secondary-bg);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+.pdf-page-navigation button {
+  margin: 0 5px;
+  padding: 8px 12px;
+  font-size: 14px;
+  margin-top: 0;
+  background-color: var(--company-pink);
+  color: white;
+}
+.pdf-page-navigation button:disabled {
+  background-color: #5a6268;
+  cursor: not-allowed;
+}
+.pdf-page-navigation span {
+  color: var(--text-primary);
+}
+
+.output-group {
+  margin-top: 15px;
+}
+.output-group label {
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+.output-group textarea {
+  min-height: 60px;
+  background-color: var(--primary-bg);
+  border-color: var(--border-color);
+  margin-top: 2px;
+}
+
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--secondary-bg);
+  padding: 8px 12px;
+  border-radius: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.theme-switch-wrapper label {
+  margin: 0 8px 0 0;
+  color: var(--text-primary);
+  font-size: 0.85em;
+  line-height: 1;
+}
+.theme-switch {
+  display: inline-block;
+  height: 22px;
+  position: relative;
+  width: 40px;
+}
+.theme-switch input {
+  display: none;
+}
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: 0.4s;
+  border-radius: 22px;
+}
+.slider:before {
+  background-color: #fff;
+  bottom: 3px;
+  content: "";
+  height: 16px;
+  left: 3px;
+  position: absolute;
+  transition: 0.4s;
+  width: 16px;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: var(--company-pink);
+}
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+/* Photo Section Styles */
+#photoSection {
+  margin-top: 20px;
+}
+.photo-actions-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+.photo-action-button {
+  flex: 1;
+  padding: 10px 15px;
+  background-color: var(--photo-btn-bg);
+  color: var(--photo-btn-text);
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 150px;
+  margin-top: 0;
+}
+.photo-action-button:hover {
+  filter: brightness(1.1);
+}
+.photo-action-button svg {
+  fill: var(--photo-btn-text);
+}
+
+#cameraPhotoInput,
+#galleryPhotoInput {
+  display: none;
+}
+
+#photoPreviews {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  border: 1px dashed var(--border-color);
+  padding: 8px;
+  min-height: 50px;
+  border-radius: 4px;
+  align-items: flex-start;
+}
+.photo-preview-item {
+  position: relative;
+  border: 1px solid var(--border-color);
+  padding: 5px;
+  border-radius: 4px;
+  background-color: var(--secondary-bg);
+  display: flex;
+  flex-direction: column;
+  width: 120px;
+  max-width: 120px;
+  box-sizing: border-box;
+  height: auto;
+}
+.photo-preview-item.comments-enabled {
+  width: 180px;
+  max-width: 180px;
+}
+
+@media (max-width: 480px) {
+  .photo-preview-item,
+  .photo-preview-item.comments-enabled {
+    width: calc(50% - 4px);
+    max-width: none;
+  }
+}
+
+.photo-preview-item img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 2px;
+  margin-bottom: 5px;
+  object-fit: cover;
+  max-height: 100px;
+}
+.photo-preview-item.comments-enabled img {
+  max-height: 150px;
+}
+
+.delete-photo-button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 24px;
+  height: 24px;
+  background-color: transparent;
+  border: 1.5px solid var(--delete-icon-border);
+  color: var(--delete-icon-fill);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-family: "Arial Black", Gadget, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 1;
+  padding: 0;
+  transition: background-color 0.3s ease, transform 0.2s ease,
+    border-color 0.3s ease, color 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.delete-photo-button::before {
+  content: "X";
+}
+.delete-photo-button:hover {
+  background-color: rgba(
+    255,
+    0,
+    0,
+    0.7
+  ); /* Use a more transparent or theme-aware red if needed */
+  border-color: var(--danger-red);
+  color: var(--text-light); /* Ensure text is visible on red background */
+  transform: scale(1.1);
+}
+
+.photo-comment-textarea {
+  width: 100%;
+  font-size: 12px;
+  padding: 6px;
+  margin-top: auto; /* Pushes textarea to the bottom */
+  min-height: 40px;
+  box-sizing: border-box;
+  border: 1px solid var(--input-border);
+  border-radius: 3px;
+  background-color: var(--input-bg);
+  color: var(--input-text);
+  display: none; /* Hidden by default */
+}
+.photo-preview-item.comments-enabled .photo-comment-textarea {
+  display: block; /* Shown when comments are enabled on the item */
+}
+
+.loader {
+  border: 5px solid var(--input-bg);
+  border-top: 5px solid var(--loader-color);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+  display: none;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.button-container {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+.hyperlink-config-section,
+.pallet-paper-section {
+  margin-top: 30px;
+}
+.pallet-data-display div {
+  margin-bottom: 5px;
+  font-size: 0.95em;
+}
+.pallet-data-display span {
+  font-weight: 600;
+  color: var(--company-pink);
+  padding-left: 5px;
+}
+
+.materials-input-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-start;
+  margin-top: 5px;
+}
+.material-item {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+  flex: 1;
+}
+.material-item label.material-label {
+  font-size: 0.9em;
+  margin-bottom: 3px;
+  font-weight: normal;
+  color: var(--text-secondary);
+  display: block;
+  margin-top: 0;
+}
+.material-item input.material-input {
+  width: 100%;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+@media (min-width: 500px) {
+  .materials-input-container {
+    flex-wrap: nowrap;
+  }
+  .material-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+  }
+  .material-item label.material-label {
+    margin-bottom: 0;
+    white-space: nowrap;
+  }
+  .material-item input.material-input {
+    width: 60px;
+  }
+}
+/* QR Scanner Styles */
+.qr-scan-button {
+  padding: 10px 15px;
+  background-color: var(
+    --company-pink
+  ); /* Main accent color for primary QR scan button */
+  color: var(--text-light); /* Text light for good contrast on pink */
+  border-radius: 4px;
+  text-align: center;
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0; /* SVG will have its own margin if needed */
+  min-width: 150px;
+  margin-top: 10px; /* Spacing from elements above */
+  transition: background-color 0.2s ease, filter 0.2s ease, transform 0.1s ease;
+  line-height: 1.2; /* Adjust if text wraps awkwardly */
+}
+
+.qr-scan-button svg {
+  /* margin-right is set inline on the SVG in HTML to ensure it's applied */
+}
+
+.qr-scan-button:hover {
+  filter: brightness(1.15);
+}
+
+.qr-scan-button:active {
+  transform: scale(0.98);
+}
+
+.qr-scan-button:disabled {
+  background-color: var(--button-secondary-bg); /* Use a disabled-like color */
+  color: var(--text-secondary); /* Dim text color when disabled */
+  cursor: not-allowed;
+  filter: brightness(0.85);
+}
+
+/* Secondary style for QR Close button */
+.qr-scan-button.secondary {
+  background-color: var(--button-secondary-bg); /* Default secondary bg */
+  color: var(--text-light); /* Text light for secondary button */
+}
+
+html.dark-mode .qr-scan-button.secondary {
+  /* --button-secondary-bg adapts, ensure text contrast if needed, but var(--text-light) might still be ok
+     However, most dark mode secondary buttons use a lighter text.
+     Let's check clearReportBtn: it uses --text-light in both modes. So this should be fine.
+  */
+}
+
+.qr-scan-button.secondary:hover {
+  filter: brightness(1.1); /* Standard hover for secondary */
+}
+
+#qrReader {
+  border: 2px solid var(--company-pink); /* Make the reader border more prominent */
+  background-color: var(--secondary-bg);
+  border-radius: 4px;
+  overflow: hidden; /* Ensures video corners are clipped if video is larger */
+}
+
+#qrReader video {
+  /* Ensure video fills the container and maintains aspect ratio */
+  width: 100% !important;
+  height: auto !important;
+  display: block; /* Removes any extra space below the video element */
+}
+/* Style for successful scan indication on the job number field */
+.scan-successful {
+  background-color: #d4edda !important; /* Light green background */
+  border-color: #c3e6cb !important;
+  color: #155724 !important;
+  /* Add any other subtle highlighting you want */
+}
+
+/* Header button styles */
+.header-actions-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.header-button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: fit-content; /* Adjust as needed */
+}
+
+.clear-report-button {
+  background-color: var(--button-secondary-bg);
+  color: var(--text-light);
+  transition: background-color 0.2s ease, filter 0.2s ease, transform 0.1s ease;
+}
+
+.clear-report-button:hover {
+  filter: brightness(1.1);
+}
+
+.clear-report-button:active {
+  transform: scale(0.98);
+}
+
+.qr-scan-button.header-button {
+  /* Inherits general header-button styles */
+}
+
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Adjustments for header appearance - you might need to fine-tune these */
+.app-header {
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between; /* Align buttons to the right */
+  align-items: center;
+  background-color: var(--header-bg);
+  color: var(--header-text);
+}
+
+.header-title-logo {
+  /* You can still use this if you want to add something else later */
+  /* For now, it might be empty or contain a hidden element */
+  display: none; /* Hide the logo container for now */
+}
