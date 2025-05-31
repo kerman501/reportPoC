@@ -56,14 +56,19 @@ async function fetchSheetData(spreadsheetId, sheetName, range = "B:E") {
     return response.result.values || [];
   } catch (err) {
     // ... (остальная часть обработчика ошибок без изменений)
-    console.error("Error fetching sheet data:", err);
+    console.error("Error fetching sheet data. Raw error object:", err);
     let userMessage = "Error fetching data from Google Sheets.";
     if (err.result && err.result.error) {
+      console.error("Detailed Google API Error:", err.result.error);
       userMessage += ` Details: ${err.result.error.message}`;
       if (err.result.error.status === "PERMISSION_DENIED") {
         userMessage =
           "Permission denied. Ensure you have access to the sheet and the correct API scopes are enabled.";
       } else if (err.result.error.status === "NOT_FOUND") {
+        console.error(
+          "Unknown error structure during fetchSheetData:",
+          err.message
+        );
         userMessage = `Sheet or range not found. Please check Spreadsheet ID, Sheet Name ('${sheetName}') and Range ('${range}').`;
       }
     }
