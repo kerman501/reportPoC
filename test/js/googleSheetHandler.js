@@ -93,13 +93,29 @@ async function updateSheetCell(
   clientName,
   valueToFill
 ) {
-  if (!gapiInstance || !gapiInstance.client) {
-    console.error("GAPI client not initialized or user not signed in.");
-    // alert("Google API not ready. Please sign in first.");
-    return { success: false, message: "Google API not ready. Please sign in." };
+  // gapiInstance это gapi.client, переданный из main.js
+  // Проверяем, что gapiInstance (т.е. gapi.client) существует и
+  // что API для Google Sheets (gapi.client.sheets) загружено и доступно.
+  if (
+    !gapiInstance ||
+    !gapiInstance.sheets ||
+    !gapiInstance.sheets.spreadsheets
+  ) {
+    console.error(
+      "GAPI client not initialized, user not signed in, or Sheets API not ready for updateSheetCell.",
+      "gapiInstance:",
+      gapiInstance,
+      "gapiInstance.sheets:",
+      gapiInstance ? gapiInstance.sheets : "N/A"
+    );
+    return {
+      success: false,
+      message: "Google API not ready. Please sign in to update the sheet.",
+    };
   }
 
   if (!spreadsheetId || !sheetName || !jobNumber || !clientName) {
+    // Эта проверка остается, она важна
     return {
       success: false,
       message: "Missing required parameters for updating sheet.",
@@ -108,9 +124,9 @@ async function updateSheetCell(
 
   try {
     // 1. Fetch columns B (Job Number) and C (Client Name) to find the row
-    // We fetch a reasonable number of rows, e.g., 1000. Adjust if your sheets are larger.
-    const rangeToSearch = `${sheetName}!B1:C1000`;
-    const response = await gapiInstance.client.sheets.spreadsheets.values.get({
+    const rangeToSearch = `${sheetName}!B1:C1000`; // Убедитесь, что диапазон достаточен
+    // Используем gapiInstance напрямую
+    const response = await gapiInstance.sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
       range: rangeToSearch,
     });
@@ -145,15 +161,17 @@ async function updateSheetCell(
 
     // 2. Update column F for the found row
     const targetCell = `${sheetName}!F${targetRowIndex}`;
-    const updateResponse =
-      await gapiInstance.client.sheets.spreadsheets.values.update({
+    // Используем gapiInstance напрямую
+    const updateResponse = await gapiInstance.sheets.spreadsheets.values.update(
+      {
         spreadsheetId: spreadsheetId,
         range: targetCell,
-        valueInputOption: "USER_ENTERED",
+        valueInputOption: "USER_ENTERED", // Или "RAW" если не нужны формулы
         resource: {
           values: [[valueToFill]],
         },
-      });
+      }
+    );
 
     console.log("Sheet cell updated successfully:", updateResponse.result);
     return {
@@ -162,16 +180,21 @@ async function updateSheetCell(
       updatedRange: updateResponse.result.updatedRange,
     };
   } catch (err) {
-    console.error("Error updating sheet cell:", err);
+    console.error("Error updating sheet cell. Raw error object:", err);
     let userMessage = "Error updating Google Sheet.";
     if (err.result && err.result.error) {
-      userMessage += ` Details: ${err.result.error.message}`;
+      console.error(
+        "Detailed Google API Error (updateSheetCell):",
+        err.result.error
+      );
+      userMessage += ` Details: ${err.result.error.message} (Status: ${err.result.error.status})`;
       if (err.result.error.status === "PERMISSION_DENIED") {
         userMessage =
           "Permission denied to update the sheet. Check sheet permissions and API scopes.";
       }
+    } else {
+      userMessage += ` ${err.message || "Unknown error"}`;
     }
-    // alert(userMessage); // Alerting here might be too noisy, handle in UI
     return { success: false, message: userMessage };
   }
 }
