@@ -10,6 +10,7 @@ import {
   fetchSheetData,
   getCurrentDateSheetName,
 } from "./googleSheetHandler.js"; // Assuming gapi is initialized
+import { updateStatusMessage, updateAndSetFieldStatus } from "./uiHandler.js";
 
 // Debounce/throttle: Minimum 60 seconds between fetches
 const MIN_FETCH_INTERVAL_MS = 60 * 1000;
