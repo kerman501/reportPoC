@@ -180,7 +180,7 @@ function getCurrentDateSheetName() {
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
   const year = today.getFullYear();
-  return `<span class="math-inline">\{month\}/</span>{day}/${year}`;
+  return `${month}/${day}/${year}`; // Corrected: Returns "MM/DD/YYYY"
 }
 
 // You might also need functions to handle sign-in and sign-out
