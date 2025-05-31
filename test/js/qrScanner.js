@@ -17,24 +17,38 @@ const MIN_FETCH_INTERVAL_MS = 60 * 1000;
 
 async function findJobInCache(jobNumber, cache) {
   if (!cache || !cache.data || !Array.isArray(cache.data)) {
+    console.log("findJobInCache: Cache or cache.data is invalid/empty.");
     return null;
   }
-  // Assuming Job Number is in the first column (index 0) of the cached data (previously B),
-  // Client Name in the second (index 1, previously C),
-  // and Volume in the third (index 2, previously E).
-  // This depends on what columns are fetched by default (e.g., "B,C,E").
+  console.log(
+    `findJobInCache: Searching for jobNumber '${jobNumber}' in cache with ${cache.data.length} rows.`
+  );
+
+  // Range B1:E500 means:
+  // row[0] = Column B (Job Number)
+  // row[1] = Column C (Client Name)
+  // row[2] = Column D (Intermediate, not explicitly named in columnsToFetch)
+  // row[3] = Column E (Volume)
   for (const row of cache.data) {
     if (
       row &&
-      row.length >= 3 &&
+      row.length > 0 &&
       String(row[0]).trim() === String(jobNumber).trim()
     ) {
+      // Проверяем только первую колонку для совпадения номера
+      // Убедимся, что у нас есть данные для clientName и volume
+      const clientName = row.length > 1 ? row[1] || "" : "";
+      const volume = row.length > 3 ? row[3] || "" : ""; // Volume из колонки E (индекс 3)
+      console.log(
+        `findJobInCache: Found potential match. Row B: ${row[0]}, C: ${clientName}, E: ${volume}`
+      );
       return {
-        clientName: row[1] || "", // Column C
-        volume: row[2] || "", // Column E
+        clientName: clientName,
+        volume: volume,
       };
     }
   }
+  console.log(`findJobInCache: JobNumber '${jobNumber}' not found.`);
   return null;
 }
 
@@ -126,6 +140,7 @@ async function handleScannedJobNumber(jobNumber) {
         sheetNameForToday,
         range
       );
+      console.log("Fresh data from Google Sheets:", JSON.stringify(freshData));
       updateLastSheetFetchTimestamp(); // Record successful fetch attempt *before* saving cache
       saveSheetsDataCache(freshData, sheetNameForToday, currentDateStr);
 
