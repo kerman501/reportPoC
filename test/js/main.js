@@ -138,6 +138,10 @@ window.gisLoaded = () => {
 
 // Callback для GIS tokenClient (когда получен access_token)
 function gisAccessTokenCallback(tokenResponse) {
+  console.log(
+    "Access token received via GIS Token Client. Scopes granted:",
+    tokenResponse.scope
+  );
   if (tokenResponse.error) {
     console.error("GIS Access Token Error:", tokenResponse);
     updateAuthUI(false);

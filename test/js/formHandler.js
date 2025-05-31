@@ -220,7 +220,9 @@ async function handleFillSheetAndCopy() {
       "info"
     );
   document.getElementById("pdfGenerateLoader").style.display = "block"; // Show a general loader
-
+  console.log("Starting 2-second delay before updateSheetCell...");
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // Задержка 2 секунды
+  console.log("Delay finished. Calling updateSheetCell.");
   try {
     const result = await updateSheetCell(
       spreadsheetId,
