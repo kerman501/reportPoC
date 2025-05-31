@@ -25,25 +25,37 @@ function initializeGoogleApi(gapiClient) {
  * @returns {Promise<Array<Array<any>>>} A promise that resolves with an array of rows.
  */
 async function fetchSheetData(spreadsheetId, sheetName, range = "B:E") {
-  if (!gapiInstance || !gapiInstance.client) {
-    console.error("GAPI client not initialized or user not signed in.");
-    // alert("Google API not ready. Please sign in first.");
-    // Trigger sign-in flow if not signed in
-    // For now, we'll just throw an error or return empty
-    throw new Error("GAPI_NOT_READY");
+  // gapiInstance это gapi.client, переданный из main.js
+  // Проверяем, что gapiInstance (т.е. gapi.client) существует и
+  // что API для Google Sheets (gapi.client.sheets) загружено и доступно.
+  if (
+    !gapiInstance ||
+    !gapiInstance.sheets ||
+    !gapiInstance.sheets.spreadsheets
+  ) {
+    console.error(
+      "GAPI client not initialized, user not signed in, or Sheets API not ready.",
+      "gapiInstance:",
+      gapiInstance,
+      "gapiInstance.sheets:",
+      gapiInstance ? gapiInstance.sheets : "N/A"
+    );
+    throw new Error("GAPI_NOT_READY_OR_SHEETS_API_UNAVAILABLE");
   }
 
   const fullRange = `${sheetName}!${range}`;
   console.log(`Fetching data from: ${spreadsheetId}, range: ${fullRange}`);
 
   try {
-    const response = await gapiInstance.client.sheets.spreadsheets.values.get({
+    // Используем gapiInstance напрямую, так как это и есть gapi.client
+    const response = await gapiInstance.sheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
       range: fullRange,
     });
     console.log("Sheet data fetched successfully:", response.result.values);
-    return response.result.values || []; // Ensure an array is returned even if no data
+    return response.result.values || [];
   } catch (err) {
+    // ... (остальная часть обработчика ошибок без изменений)
     console.error("Error fetching sheet data:", err);
     let userMessage = "Error fetching data from Google Sheets.";
     if (err.result && err.result.error) {
@@ -55,8 +67,8 @@ async function fetchSheetData(spreadsheetId, sheetName, range = "B:E") {
         userMessage = `Sheet or range not found. Please check Spreadsheet ID, Sheet Name ('${sheetName}') and Range ('${range}').`;
       }
     }
-    alert(userMessage);
-    throw err; // Re-throw for higher-level handling if needed
+    // alert(userMessage); // Consider if alert is needed here or should be handled by caller
+    throw err;
   }
 }
 

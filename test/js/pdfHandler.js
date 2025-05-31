@@ -369,6 +369,11 @@ function getLoadedPdfDocument() {
  * @returns {{current: number, total: number}}
  */
 function getCurrentPdfPageInfo() {
+  console.log(
+    `pdfHandler: currentPageInView = ${currentPageInView}, totalPages = ${
+      loadedPdfDocument ? loadedPdfDocument.numPages : "N/A"
+    }`
+  );
   return {
     current: currentPageInView,
     total: loadedPdfDocument ? loadedPdfDocument.numPages : 0,

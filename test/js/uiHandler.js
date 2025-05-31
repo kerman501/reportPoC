@@ -1,4 +1,10 @@
 // js/uiHandler.js
+
+import {
+  getLoadedPdfDocument,
+  getCurrentPdfPageInfo,
+  renderPdfPage as pdfRenderPdfPage,
+} from "./pdfHandler.js";
 import {
   getThemePreference,
   saveThemePreference,
@@ -234,12 +240,18 @@ function handleNoSelection(event) {
   }
 }
 
-function openPdfModal() {
-  const loadedPdfDocument = window.loadedPdfDocument; // Assuming loadedPdfDocument is global from pdfHandler.js
-  if (!loadedPdfDocument) {
+function uiOpenPdfModal() {
+  const currentLoadedPdf = getLoadedPdfDocument(); // <--- Используем getLoadedPdfDocument() и называем переменную currentLoadedPdf
+
+  console.log("PDF document in uiOpenPdfModal:", currentLoadedPdf); // <--- Теперь используем правильное имя переменной
+  console.log("Value of !currentLoadedPdf IS:", !currentLoadedPdf); // <--- И здесь
+
+  if (!currentLoadedPdf) {
+    // <--- И здесь
     alert("Please upload a PDF file first.");
     return;
   }
+
   const modalEl = document.getElementById("pdfModal");
   if (modalEl) {
     modalEl.style.display = "flex";
@@ -249,10 +261,23 @@ function openPdfModal() {
       // Silently ignore
     }
   }
-  // displayPdfPageInModal is also from pdfHandler.js context
-  if (typeof displayPdfPageInModal === "function") {
-    displayPdfPageInModal(window.currentPageInView || 1);
+
+  // Логика отображения страницы PDF (как мы обсуждали ранее)
+  const pageInfo = getCurrentPdfPageInfo();
+  const viewerContainer = document.getElementById("pdfViewerContainer");
+  if (viewerContainer) {
+    let canvas = viewerContainer.querySelector("canvas");
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      viewerContainer.innerHTML = "";
+      viewerContainer.appendChild(canvas);
+    }
+    if (canvas && currentLoadedPdf) {
+      // Проверяем currentLoadedPdf
+      pdfRenderPdfPage(pageInfo.current, canvas); // Вызываем renderPdfPage из pdfHandler.js
+    }
   }
+  uiUpdatePdfViewerControls(); // Предполагается, что эта функция тоже есть в uiHandler.js и обновляет элементы управления пагинацией
 }
 
 function closePdfModal(manageHistory = true) {
@@ -273,20 +298,32 @@ function closePdfModalWithHistory() {
   closePdfModal(true);
 }
 
-function updatePdfViewerControls() {
+function uiUpdatePdfViewerControls() {
   const currentPageNumEl = document.getElementById("currentPageNum");
   const totalPagesNumEl = document.getElementById("totalPagesNum");
   const prevPageBtn = document.getElementById("prevPage");
   const nextPageBtn = document.getElementById("nextPage");
-  const loadedPdfDocument = window.loadedPdfDocument; // Assuming global
-  const currentPageInView = window.currentPageInView || 1; // Assuming global
 
-  if (currentPageNumEl) currentPageNumEl.textContent = currentPageInView;
-  if (totalPagesNumEl && loadedPdfDocument)
-    totalPagesNumEl.textContent = loadedPdfDocument.numPages;
-  if (prevPageBtn) prevPageBtn.disabled = currentPageInView <= 1;
-  if (nextPageBtn && loadedPdfDocument)
-    nextPageBtn.disabled = currentPageInView >= loadedPdfDocument.numPages;
+  // Получаем актуальную информацию из pdfHandler.js
+  const loadedPdf = getLoadedPdfDocument(); //
+  const pageInfo = getCurrentPdfPageInfo(); //
+
+  console.log("uiUpdatePdfViewerControls: loadedPdf:", loadedPdf);
+  console.log("uiUpdatePdfViewerControls: pageInfo:", pageInfo);
+
+  if (currentPageNumEl) currentPageNumEl.textContent = pageInfo.current; //
+  if (totalPagesNumEl && loadedPdf) {
+    totalPagesNumEl.textContent = loadedPdf.numPages; //
+  } else if (totalPagesNumEl) {
+    totalPagesNumEl.textContent = "0"; // Если PDF не загружен, показать 0
+  }
+
+  if (prevPageBtn) prevPageBtn.disabled = pageInfo.current <= 1; //
+  if (nextPageBtn && loadedPdf) {
+    nextPageBtn.disabled = pageInfo.current >= loadedPdf.numPages; //
+  } else if (nextPageBtn) {
+    nextPageBtn.disabled = true; // Если PDF не загружен, кнопка неактивна
+  }
 }
 
 // displayPdfPageInModal and renderPdfPage are primarily in pdfHandler.js context.
@@ -559,10 +596,10 @@ export {
   createQuestionFields,
   resetDynamicQuestionFields, // Exporting for formHandler
   handleNoSelection,
-  openPdfModal,
+  uiOpenPdfModal,
   closePdfModal,
   closePdfModalWithHistory,
-  updatePdfViewerControls,
+  uiUpdatePdfViewerControls,
   updateStatusMessage,
   toggleLoader,
   togglePhotoCommentFieldsDOM,

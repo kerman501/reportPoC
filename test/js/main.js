@@ -32,10 +32,10 @@ import {
   getCurrentDateFormatted,
   setFieldStatus as setUiFieldStatus,
   updateAndSetFieldStatus as updateUiAndSetFieldStatus,
-  openPdfModal as uiOpenPdfModal,
+  uiOpenPdfModal as uiOpenPdfModal,
   closePdfModal as uiClosePdfModal,
   closePdfModalWithHistory as uiClosePdfModalWithHistory,
-  updatePdfViewerControls as uiUpdatePdfViewerControls,
+  uiUpdatePdfViewerControls as uiUpdatePdfViewerControls,
   updatePdfItemCountUI as uiUpdatePdfItemCountUI,
   updatePdfMaterialCountsUI as uiUpdatePdfMaterialCountsUI,
 } from "./uiHandler.js";
