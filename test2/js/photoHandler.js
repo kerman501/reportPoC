@@ -179,3 +179,91 @@ function getPhotoCommentsByFilename() {
   });
   return commentsMap;
 }
+function triggerPhotoDownload(fileOrBlob, filename) {
+  const objectUrl = URL.createObjectURL(fileOrBlob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  URL.revokeObjectURL(objectUrl);
+}
+
+async function compressAndDownloadImage(file, filename) {
+  const MAX_SIZE_NO_COMPRESSION_KB = 500;
+  const MAX_DIM_NO_COMPRESSION_PX = 1920;
+  const TARGET_MAX_DIM_PX = 2000;
+  const JPEG_QUALITY = 0.8;
+
+  if (file.size / 1024 < MAX_SIZE_NO_COMPRESSION_KB) {
+    triggerPhotoDownload(file, filename);
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    const img = new Image();
+    img.onload = async function () {
+      const originalWidth = img.width;
+      const originalHeight = img.height;
+
+      if (Math.max(originalWidth, originalHeight) < MAX_DIM_NO_COMPRESSION_PX) {
+        triggerPhotoDownload(file, filename);
+        return;
+      }
+
+      let targetWidth = originalWidth;
+      let targetHeight = originalHeight;
+
+      if (originalWidth > originalHeight) {
+        if (originalWidth > TARGET_MAX_DIM_PX) {
+          targetHeight = Math.round(
+            originalHeight * (TARGET_MAX_DIM_PX / originalWidth)
+          );
+          targetWidth = TARGET_MAX_DIM_PX;
+        }
+      } else {
+        if (originalHeight > TARGET_MAX_DIM_PX) {
+          targetWidth = Math.round(
+            originalWidth * (TARGET_MAX_DIM_PX / originalHeight)
+          );
+          targetHeight = TARGET_MAX_DIM_PX;
+        }
+      }
+
+      if (targetWidth > originalWidth) targetWidth = originalWidth;
+      if (targetHeight > originalHeight) targetHeight = originalHeight;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+      canvas.toBlob(
+        function (blob) {
+          if (blob) {
+            if (blob.size > file.size) {
+              triggerPhotoDownload(file, filename);
+            } else {
+              triggerPhotoDownload(blob, filename);
+            }
+          } else {
+            triggerPhotoDownload(file, filename);
+          }
+        },
+        "image/jpeg",
+        JPEG_QUALITY
+      );
+    };
+    img.onerror = function () {
+      triggerPhotoDownload(file, filename);
+    };
+    img.src = event.target.result;
+  };
+  reader.onerror = function () {
+    triggerPhotoDownload(file, filename);
+  };
+  reader.readAsDataURL(file);
+}
