@@ -52,10 +52,39 @@ document.addEventListener("DOMContentLoaded", () => {
     iconImagePreloader.src = "assets/logo.png";
   }
 
-  // Global Event Listeners for buttons
+  // --- Global Event Listeners for buttons ---
+
   document
     .getElementById("clearReportBtn")
     ?.addEventListener("click", clearReportData);
+
+  document
+    .getElementById("copyJobNumberBtn")
+    ?.addEventListener("click", (event) => {
+      event.preventDefault();
+      const copyBtn = event.currentTarget;
+      const jobNumberInput = document.getElementById("job");
+
+      if (jobNumberInput && jobNumberInput.value) {
+        navigator.clipboard
+          .writeText(jobNumberInput.value)
+          .then(() => {
+            const originalIcon = copyBtn.innerHTML;
+
+            copyBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-check-lg" viewBox="0 0 16 16"><path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.854 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/></svg>`;
+            copyBtn.classList.add("success");
+
+            setTimeout(() => {
+              copyBtn.innerHTML = originalIcon;
+              copyBtn.classList.remove("success");
+            }, 1500);
+          })
+          .catch((err) => {
+            console.error("Failed to copy job number: ", err);
+          });
+      }
+    });
+
   document
     .getElementById("pdfFile")
     ?.addEventListener("change", handlePdfFileChange);

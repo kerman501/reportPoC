@@ -96,7 +96,31 @@
             />
           </div>
           <div>
-            <label for="job">• Job number:</label>
+            <label for="job">
+              • Job number:
+              <button
+                type="button"
+                id="copyJobNumberBtn"
+                class="icon-button"
+                title="Copy Job Number"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-clipboard"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
+                  ></path>
+                  <path
+                    d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
+                  ></path>
+                </svg>
+              </button>
+            </label>
             <input
               type="text"
               id="job"
@@ -370,7 +394,7 @@
                   d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
                 />
                 <path
-                  d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z"
+                  d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
                 />
               </svg>
               Copy Sheet String
@@ -518,6 +542,208 @@
               rows="4"
             ></textarea>
           </div>
+        </div>
+      </details>
+
+      <details class="rules-section">
+        <summary>Packing Rules</summary>
+        <div class="rules-content">
+          <h3>WHAT'S THE ITEM ?</h3>
+          <h4>SOFA/COUCH:</h4>
+          <ol>
+            <li>
+              Must be fully shrinked and wrapped in 3 blankets(top, middle,
+              bottom).
+            </li>
+            <li>
+              High/Large sofa legs must be removed from the sofa and placed in a
+              box.
+            </li>
+            <li>
+              Cushions/Pillows from sofa must be fully shrinked and completely
+              wrapped in blankets.
+            </li>
+          </ol>
+          <h4>MATTRESS:</h4>
+          <ol>
+            <li>
+              Must be fully shrinked, wrapped in 2 blankets (top and bottom) and
+              placed in the box.
+            </li>
+            <li>
+              It can't be folded and the blue mattress cover can't be used.
+            </li>
+          </ol>
+          <h4>BED FRAME:</h4>
+          <ol>
+            <li>
+              Must be disassembled and the screws from it must be placed in the
+              Hardware box.
+            </li>
+            <li>Wooden parts must be completely wrapped in blankets.</li>
+            <li>Metal/Plastic parts must be fully shrinked.</li>
+          </ol>
+          <h4>
+            DRESSER, ARMOIRE, CREDENZA, CABINET, NIGHTSTAND, BOOKCASE, TV STAND:
+          </h4>
+          <ol>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered all over with the corners to protect the edges or
+              cardboard instead of corners.
+            </li>
+            <li>
+              Must be covered with cardbord on the front side (to protect the
+              doors/glass).
+            </li>
+          </ol>
+          <h4>DESK/TABLE (DINING, COFFEE, CONSOLE, ENTRYWAY, etc.):</h4>
+          <ol>
+            <li>
+              Must be disassembled. The legs must be removed from the table/desk
+              top.
+            </li>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered all over with the corners to protect the edges or
+              cardboard instead corners.
+            </li>
+            <li>
+              Must be covered with cardbord on the top surface (to protect the
+              tabletop).
+            </li>
+          </ol>
+          <h4>HARDWARE/SCREWS:</h4>
+          <ol>
+            <li>Must be placed in a separate box.</li>
+            <li>Must be labeled with a sticker.</li>
+            <li>Must be marked on the inventory list as Hardware box.</li>
+          </ol>
+          <h4>TV/MONITOR:</h4>
+          <ol>
+            <li>Must be covered with blankets.</li>
+            <li>Must be placed in the TV box.</li>
+            <li>Must be one blanket at the bottom of the box.</li>
+          </ol>
+          <h4>PAINTINGS, MIRRORS, GLASS in TV BOX:</h4>
+          <ol>
+            <li>Can be placed in a TV box.</li>
+            <li>Must be separated by blankets or cardboard in TV box.</li>
+            <li>Must be one blanket at the bottom of the TV box.</li>
+          </ol>
+          <h4>LARGE PAINTINGS, MIRRORS, GLASS without TV BOX:</h4>
+          <ol>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered with cardbord on both sides (to protect the
+              surfaces).
+            </li>
+          </ol>
+          <p>
+            <strong>LAMP</strong> - Must be disassembled and placed in a box or
+            wrapped in bubble wrap or in blankets.
+          </p>
+          <p><strong>SUITCASE</strong> - Must be fully shrinked.</p>
+          <p><strong>RUG/CARPET</strong> - Must be fully shrinked.</p>
+          <p><strong>AC</strong> - Must be fully shrinked.</p>
+          <p>
+            <strong>BICYCLE/PELOTON</strong> - Must be completely wrapped in
+            blankets.
+          </p>
+
+          <h3>WHAT'S THE ITEM MADE OF ?</h3>
+          <h4>
+            WOODEN FURNITURE/PIECES (ARMOIRE, DRESSER, BOOKCASE, TABLE,
+            NIGHTSTAND, BED FRAME, HEADBOARD, FOOTBOARD, TV STAND, ARMCHAIR,
+            CHAIR, CREDENZA,etc.):
+          </h4>
+          <ol>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered all over with the corners to protect the edges or
+              cardboard instead of corners.
+            </li>
+            <li>
+              Must be covered with cardboard on the top or on the front side (to
+              protect the surfaces) if required.
+            </li>
+          </ol>
+          <h4>LEATHER FURNITURE/PIECES:</h4>
+          <ol>
+            <li>Must be completely wrapped in blankets without shrink.</li>
+          </ol>
+          <h4>METAL OR PLASTIC FURNITURE/PIECES:</h4>
+          <ol>
+            <li>Must be completely shrinked.</li>
+          </ol>
+
+          <h3>PAY ATTENTION !</h3>
+          <h4>TV BOX - Must be used only for:</h4>
+          <ol>
+            <li>TV/Monitor</li>
+            <li>Paintings/Mirrors/Glass (Separated)</li>
+          </ol>
+          <p>Nothing else.</p>
+          <h4>WARDROBE BOX - Must be used only for:</h4>
+          <ol>
+            <li>Clothes with hangers</li>
+          </ol>
+          <p>Nothing else.</p>
+          <p>
+            It's not permitted to store LIVE PLANTS in all PoC storage
+            facilities.
+          </p>
+          <p>
+            It's not permitted to store ANY FOOD in all PoC storage facilities.
+          </p>
+
+          <h3>PLEASE NOTE !</h3>
+          <p>
+            COMPLETELY/FULLY WRAPPED IN BLANKETS OR SHRINKED MEANS THAT THE
+            ENTIRE SURFACE OF THE ITEM IS PROTECTED, NO UNCOVETED AREAS.
+          </p>
+        </div>
+      </details>
+
+      <details class="rules-section">
+        <summary>Stacking Rules</summary>
+        <div class="rules-content">
+          <ol>
+            <li>
+              Items MUST be within the edges of the pallet on three sides.
+            </li>
+            <li>
+              The pallets MUST not get too high (Maximum height - 2 Wardrobes).
+            </li>
+            <li>Heavy items MUST not be placed on the top of the pallet.</li>
+            <li>Light items MUST not be placed on the bottom of the pallet.</li>
+            <li>Half-empty boxes MUST be placed on top only.</li>
+            <li>
+              Stacks of heavy boxes MUST not be high and corners/cardboard MUST
+              be used to prevent damage to the boxes.
+            </li>
+            <li>
+              Unstable items on the pallet MUST be taped with force for
+              stability.
+            </li>
+            <li>
+              If there is a Mattress in the Job you MUST find out right away
+              what items it will stand on the pallet with.
+            </li>
+            <li>
+              DO NOT place tall vertical items on the pallet without good
+              support.
+            </li>
+            <li>
+              Furniture legs MUST never stick out to the sides when the pallet
+              is done.
+            </li>
+            <li>
+              Pallet MUST be marked if there's something fragile inside, if it's
+              not stable, if there are missing/voided items, etc.
+            </li>
+            <li>Final taping and shrinking MUST be done with force.</li>
+          </ol>
         </div>
       </details>
     </div>
