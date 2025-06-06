@@ -77,6 +77,7 @@ function processSelectedFiles(event, isCameraCapture) {
 
     if (isCameraCapture) {
       const filename = generatePhotoFilename(file, true);
+      compressAndDownloadImage(file, filename);
       // We are not downloading the photo automatically anymore to avoid confusion.
       // The photo is in the report. If needed, a manual download button could be added per photo.
     }

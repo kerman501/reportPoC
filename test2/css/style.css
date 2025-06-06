@@ -309,7 +309,7 @@ label.checkbox-label {
 
 button {
   /* General button styling - will be overridden by .report-button if applied */
-  margin-top: 20px;
+  margin-top: 0px;
   padding: 12px 20px;
   font-size: 16px;
   font-weight: 600;
@@ -954,67 +954,57 @@ html.dark-mode .qr-scan-button.secondary {
 
 .header-actions-wrapper {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
 }
 
-.header-btn-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--primary-bg);
-  padding: 5px;
-  border-radius: 20px;
+.header-action-btn {
   border: 1px solid var(--border-color);
-  transition: all 0.2s ease;
-}
-.header-btn-wrapper label {
-  margin: 0;
-  padding: 0 5px 0 10px;
-  font-size: 14px;
+  background-color: var(--secondary-bg);
+  color: var(--text-primary);
+  border-radius: 20px;
   font-weight: 600;
-  color: var(--text-secondary);
-}
-
-.header-btn {
-  border: none;
-  border-radius: 15px;
-  font-weight: 700;
   font-size: 14px;
-  padding: 6px 15px;
+  padding: 8px 18px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.header-btn.qr-btn {
+.header-action-btn.qr-btn {
   background-color: var(--company-pink);
+  border-color: var(--company-pink);
   color: var(--text-light);
 }
-.header-btn.qr-btn:hover {
+.header-action-btn.qr-btn:hover {
   filter: brightness(1.15);
 }
-.header-btn.qr-btn:disabled {
+.header-action-btn.qr-btn:disabled {
   background-color: var(--button-secondary-bg);
-  color: var(--text-secondary);
+  border-color: var(--button-secondary-bg);
   cursor: not-allowed;
   filter: brightness(0.85);
 }
 
-.header-btn.clear-btn {
-  background-color: var(--secondary-bg);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-}
-.header-btn.clear-btn:hover {
+/* Clear */
+.header-action-btn.clear-btn:hover {
   color: var(--danger-red);
   border-color: var(--danger-red);
-  background-color: var(--danger-red-light);
 }
 
-html.dark-mode .header-btn.clear-btn:hover {
-  background-color: var(--danger-red);
-  border-color: var(--danger-red);
-  color: var(--text-light);
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--secondary-bg);
+  padding: 8px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+}
+.theme-switch-wrapper label {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding-right: 8px;
 }
 
 /* Adjustments for header appearance - you might need to fine-tune these */
@@ -1136,6 +1126,6 @@ label[for="job"] .icon-button {
 
 @media (max-width: 768px) {
   label[for="job"] .icon-button {
-    margin-bottom: 20px;
+    margin-bottom: 0px;
   }
 }
