@@ -954,60 +954,67 @@ html.dark-mode .qr-scan-button.secondary {
 
 .header-actions-wrapper {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
-.header-button {
-  padding: 8px 15px;
-  border: 1px solid var(--border-color);
-  background-color: var(--secondary-bg);
-  color: var(--text-primary);
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 600;
-  font-size: 14px;
-  display: inline-flex;
+.header-btn-wrapper {
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  background-color: var(--primary-bg);
+  padding: 5px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+.header-btn-wrapper label {
+  margin: 0;
+  padding: 0 5px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.header-btn {
+  border: none;
+  border-radius: 15px;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 6px 15px;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.header-button:hover {
-  border-color: var(--text-primary);
-  background-color: var(--primary-bg);
-}
-
-.header-button svg {
-  width: 16px;
-  height: 16px;
-  fill: currentColor;
-}
-
-.qr-scan-button.header-button {
+.header-btn.qr-btn {
   background-color: var(--company-pink);
-  border-color: var(--company-pink);
   color: var(--text-light);
 }
-
-.qr-scan-button.header-button:hover {
-  background-color: var(--company-pink);
-  border-color: var(--company-pink);
+.header-btn.qr-btn:hover {
   filter: brightness(1.15);
 }
-
-.clear-report-button.header-button {
+.header-btn.qr-btn:disabled {
+  background-color: var(--button-secondary-bg);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  filter: brightness(0.85);
 }
 
-.clear-report-button.header-button:hover {
-  border-color: var(--danger-red);
+.header-btn.clear-btn {
+  background-color: var(--secondary-bg);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+.header-btn.clear-btn:hover {
   color: var(--danger-red);
+  border-color: var(--danger-red);
+  background-color: var(--danger-red-light);
 }
-.theme-switch-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 5px;
+
+html.dark-mode .header-btn.clear-btn:hover {
+  background-color: var(--danger-red);
+  border-color: var(--danger-red);
+  color: var(--text-light);
 }
 
 /* Adjustments for header appearance - you might need to fine-tune these */
