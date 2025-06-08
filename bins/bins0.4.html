@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bin Tracker</title>
+    
+    <style>
+        :root {
+            --bg-color: #f4f6f8;
+            --main-color: #007bff;
+            --secondary-color: #6c757d;
+            --danger-color: #dc3545;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --wash-color: #17a2b8;
+            --text-color: #212529;
+            --light-text-color: #ffffff;
+            --card-bg: #ffffff;
+            --border-color: #dee2e6;
+            --shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 16px; 
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: var(--shadow);
+        }
+        .header-stock-info {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        .header-stock-info span { margin-right: 20px; }
+        .header-stock-info .clean { color: var(--success-color); }
+        .header-stock-info .dirty { color: var(--danger-color); }
+        
+        .lang-switcher button {
+            background: none; border: 2px solid var(--border-color); border-radius: 10px;
+            padding: 8px; margin-left: 8px; font-size: 1.5rem; cursor: pointer;
+        }
+        .lang-switcher button.active { border-color: var(--main-color); }
+
+        .widget-container {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .widget {
+            flex: 1;
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+        }
+        .widget h2 {
+            font-size: 1.5rem;
+            margin-top: 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 1.1rem; margin-bottom: 8px; font-weight: 500; }
+        .form-group input {
+            width: 100%; padding: 12px; font-size: 1.1rem; border-radius: 8px;
+            border: 2px solid var(--border-color); box-sizing: border-box;
+        }
+        
+        .bin-counter {
+            display: flex; align-items: center; justify-content: space-between; gap: 5px; flex-wrap: wrap;
+        }
+        .bin-counter-btn {
+            font-size: 1.5rem; font-weight: bold; width: 45px; height: 45px;
+            border-radius: 50%; border: none; color: var(--light-text-color); cursor: pointer;
+        }
+        .bin-quick-btn {
+            font-size: 0.9rem; font-weight: bold; padding: 6px 10px;
+            border-radius: 20px; border: none; color: var(--light-text-color); cursor: pointer;
+            background-color: var(--secondary-color);
+        }
+        .bin-counter-btn.minus { background-color: var(--danger-color); }
+        .bin-counter-btn.plus { background-color: var(--success-color); }
+
+        .bin-count-display {
+            font-size: 2.5rem; font-weight: bold; min-width: 60px; text-align: center;
+            padding: 5px 10px; border-radius: 8px; cursor: pointer; transition: background-color 0.2s;
+        }
+        .bin-count-display:hover { background-color: #e9ecef; }
+        .bin-count-input {
+            font-size: 2.5rem; font-weight: bold; width: 100px;
+            text-align: center; border: 2px solid var(--main-color);
+        }
+
+        .widget-save-button {
+            width: 100%; padding: 15px; font-size: 1.2rem; font-weight: 600;
+            border: none; border-radius: 8px; color: var(--light-text-color);
+            cursor: pointer; transition: filter 0.2s;
+        }
+        .widget-save-button:hover { filter: brightness(1.1); }
+        
+        .secondary-actions {
+            display: flex; gap: 20px; padding: 20px;
+            background: var(--card-bg); border-radius: 12px; box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+        .secondary-actions .action-button {
+            flex: 1; font-size: 1.2rem; font-weight: 500; padding: 20px;
+            border: none; border-radius: 12px; color: var(--light-text-color); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        #adjust-stock-btn { background-color: var(--warning-color); color: var(--text-color); }
+        #report-btn { background-color: var(--secondary-color); }
+
+        .transactions-list h3 { font-size: 1.5rem; border-bottom: 2px solid var(--border-color); padding-bottom: 8px; }
+        #transactions-container { margin-top: 15px; font-size: 1.1rem; }
+        
+        .transaction-item {
+            background-color: var(--card-bg); padding: 15px; border-radius: 8px; margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 15px;
+        }
+        .transaction-item .icon { font-size: 1.5rem; }
+        .transaction-item .details { flex-grow: 1; }
+        .transaction-item .time { font-size: 0.9em; color: var(--secondary-color); }
+        .transaction-comment { font-style: italic; font-size: 0.95em; color: #555; }
+        
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--bg-color); padding: 30px; border-radius: 15px;
+            width: 90%; max-width: 550px; text-align: center;
+        }
+        .modal-content h2 { font-size: 1.8rem; margin-top: 0; margin-bottom: 25px; }
+        #report-text-area { width: 100%; height: 400px; font-family: monospace; font-size: 0.9rem; }
+        
+        @media (max-width: 900px) {
+            .widget-container { flex-direction: column; }
+            .header { flex-direction: column; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-stock-info">
+                <span><b data-key="cleanStock" class="clean">Clean</b>: <span id="clean-stock-count" class="clean">0</span></span>
+                <span><b data-key="dirtyStock" class="dirty">Dirty</b>: <span id="dirty-stock-count" class="dirty">0</span></span>
+            </div>
+            <div class="lang-switcher">
+                <button id="lang-en">🇬🇧</button> <button id="lang-sr">🇷🇸</button> <button id="lang-es">🇪🇸</button>
+            </div>
+        </header>
+
+        <main>
+            <div class="widget-container">
+                <div class="widget" id="truck-widget">
+                    <h2 data-key="truckWidgetTitle">🚚 Truck Operations</h2>
+                    <div class="form-group"><label for="truck-number" data-key="truckNumber">Truck Number</label><input type="text" id="truck-number"></div>
+                    <div class="form-group"><label data-key="dirtyIn">Dirty Bins (Received)</label><div class="bin-counter" data-type="dirtyIn">
+                        <button class="bin-counter-btn minus" data-op="-">-</button><span class="bin-count-display">0</span>
+                        <button class="bin-counter-btn plus" data-op="+">+</button>
+                        <div><button class="bin-quick-btn" data-op="add" data-value="25">+25</button><button class="bin-quick-btn" data-op="add" data-value="100">+100</button></div>
+                    </div></div>
+                    <div class="form-group"><label data-key="cleanOut">Clean Bins (Shipped)</label><div class="bin-counter" data-type="cleanOut">
+                        <button class="bin-counter-btn minus" data-op="-">-</button><span class="bin-count-display">0</span>
+                        <button class="bin-counter-btn plus" data-op="+">+</button>
+                        <div><button class="bin-quick-btn" data-op="add" data-value="25">+25</button><button class="bin-quick-btn" data-op="add" data-value="100">+100</button></div>
+                    </div></div>
+                    <button id="save-truck-btn" class="widget-save-button" style="background-color: var(--main-color);"><span data-key="saveTruck">Save Truck Entry</span></button>
+                </div>
+
+                <div class="widget" id="wash-widget">
+                    <h2 data-key="washWidgetTitle">💧 Wash Bins</h2>
+                    <div class="form-group"><label for="wash-user" data-key="employeeName">Employee Name</label><input type="text" id="wash-user"></div>
+                    <div class="form-group"><label data-key="quantityWashed">Quantity Washed</label><div class="bin-counter" data-type="washQty">
+                        <button class="bin-counter-btn minus" data-op="-">-</button><span class="bin-count-display">0</span>
+                        <button class="bin-counter-btn plus" data-op="+">+</button>
+                        <div><button class="bin-quick-btn" data-op="add" data-value="25">+25</button><button class="bin-quick-btn" data-op="add" data-value="100">+100</button></div>
+                    </div></div>
+                    <div class="form-group"><label for="wash-comment" data-key="comment">Comment</label><input type="text" id="wash-comment" placeholder="e.g. removing stickers"></div>
+                    <button id="save-wash-btn" class="widget-save-button" style="background-color: var(--wash-color);"><span data-key="saveWash">Save Wash</span></button>
+                </div>
+            </div>
+
+            <section class="secondary-actions">
+                <button id="adjust-stock-btn" class="action-button"><span data-key="adjustStock">⚙️ Adjust Stock</span></button>
+                <button id="report-btn" class="action-button"><span data-key="generateReport">📊 Generate Report</span></button>
+            </section>
+            
+            <section class="transactions-list">
+                <h3 data-key="todaysTransactions">Today's Transactions</h3>
+                <div id="transactions-container"></div>
+            </section>
+        </main>
+    </div>
+
+    <div id="adjust-modal" class="modal"><div class="modal-content">
+        <h2 data-key="adjustStockTitle">Adjust Stock</h2>
+        <div class="form-group"><label for="adjust-clean" data-key="newCleanStock">New Clean Bins Total</label><input type="number" id="adjust-clean"></div>
+        <div class="form-group"><label for="adjust-dirty" data-key="newDirtyStock">New Dirty Bins Total</label><input type="number" id="adjust-dirty"></div>
+        <div class="form-group"><label for="adjust-reason" data-key="reasonForAdjustment">Reason for Adjustment (Required)</label><input type="text" id="adjust-reason"></div>
+        <div class="modal-actions"><button class="cancel-btn" style="flex:1; padding: 15px; font-size: 1.1rem; background-color: var(--secondary-color); color: white; border:none; border-radius: 8px;"><span data-key="cancel">Cancel</span></button><button id="save-adjust-btn" style="flex:1; padding: 15px; font-size: 1.1rem; background-color: var(--success-color); color: white; border:none; border-radius: 8px;"><span data-key="save">Save</span></button></div>
+    </div></div>
+
+    <div id="report-modal" class="modal"><div class="modal-content">
+        <h2 data-key="reportTitle">Daily Report</h2>
+        <textarea id="report-text-area" readonly></textarea>
+        <div class="modal-actions"><button class="cancel-btn" style="flex:1; padding: 15px; font-size: 1.1rem; background-color: var(--secondary-color); color: white; border:none; border-radius: 8px;"><span data-key="close">Close</span></button><button id="copy-report-btn" style="flex:1; padding: 15px; font-size: 1.1rem; background-color: var(--main-color); color: white; border:none; border-radius: 8px;"><span data-key="copyData">Copy Report</span></button></div>
+    </div></div>
+
+    <div id="setup-modal" class="modal"><div class="modal-content">
+        <h2 data-key="initialSetup">Initial Setup</h2>
+        <p data-key="initialSetupText" style="font-size: 1.1rem; margin-bottom: 20px;">Please enter the current number of bins in stock to get started.</p>
+        <div class="form-group"><label for="initial-clean" data-key="initialClean">Initial Clean Bins</label><input type="number" id="initial-clean" placeholder="e.g., 1000"></div>
+        <div class="form-group"><label for="initial-dirty" data-key="initialDirty">Initial Dirty Bins</label><input type="number" id="initial-dirty" placeholder="e.g., 50"></div>
+        <div class="modal-actions"><button id="save-setup-btn" style="width: 100%; padding: 15px; font-size: 1.1rem; background-color: var(--success-color); color: white; border:none; border-radius: 8px;"><span data-key="saveInitialStock">Save Initial Stock</span></button></div>
+    </div></div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const translations = {
+            en: {
+                cleanStock: "Clean", dirtyStock: "Dirty",
+                truckWidgetTitle: "🚚 Truck Operations", washWidgetTitle: "💧 Wash Bins",
+                truckNumber: "Truck Number", dirtyIn: "Dirty Bins (Received)", cleanOut: "Clean Bins (Shipped)", saveTruck: "Save Truck Entry",
+                employeeName: "Employee Name", quantityWashed: "Quantity Washed", comment: "Comment", saveWash: "Save Wash",
+                adjustStock: "⚙️ Adjust Stock", generateReport: "📊 Generate Report", todaysTransactions: "Today's Transactions",
+                adjustStockTitle: "Adjust Stock", newCleanStock: "New Clean Bins Total", newDirtyStock: "New Dirty Bins Total", reasonForAdjustment: "Reason for Adjustment (Required)",
+                cancel: "Cancel", save: "Save", close: "Close", reportTitle: "Daily Report", copyData: "Copy Report", copied: "Copied!",
+                initialSetup: "Initial Setup", initialSetupText: "Please enter the current number of bins in stock to get started.",
+                initialClean: "Initial Clean Bins", initialDirty: "Initial Dirty Bins", saveInitialStock: "Save Initial Stock",
+                truck: "Truck", received: "Received", shipped: "Shipped", washed: "Washed", adjustment: "Adjustment",
+                clean: "Clean", dirty: "Dirty",
+                summaryTitle: "DAILY SUMMARY", binMovement: "Bin Movement", totalReceived: "Total dirty received", totalShipped: "Total clean shipped",
+                washingSummary: "Washing Summary", endOfDayStock: "End of Day Stock", cleanBinsStock: "Clean bins in stock", dirtyBinsStock: "Dirty bins in stock",
+            },
+            sr: {
+                cleanStock: "Čiste", dirtyStock: "Prljave",
+                truckWidgetTitle: "🚚 Kamionske Operacije", washWidgetTitle: "💧 Pranje Kanti",
+                truckNumber: "Broj Kamiona", dirtyIn: "Primljene Prljave Kante", cleanOut: "Poslate Čiste Kante", saveTruck: "Sačuvaj Unos Kamiona",
+                employeeName: "Ime Zaposlenog", quantityWashed: "Oprana Količina", comment: "Komentar", saveWash: "Sačuvaj Pranje",
+                adjustStock: "⚙️ Podesi Stanje", generateReport: "📊 Generiši Izveštaj", todaysTransactions: "Današnje Transakcije",
+                adjustStockTitle: "Podešavanje Stanja", newCleanStock: "Novo Ukupno Čistih", newDirtyStock: "Novo Ukupno Prljavih", reasonForAdjustment: "Razlog Podešavanja (Obavezno)",
+                cancel: "Otkaži", save: "Sačuvaj", close: "Zatvori", reportTitle: "Dnevni Izveštaj", copyData: "Kopiraj Izveštaj", copied: "Kopirano!",
+                initialSetup: "Početno Podešavanje", initialSetupText: "Molimo unesite trenutni broj kanti na zalihama.",
+                initialClean: "Početni broj čistih kanti", initialDirty: "Početni broj prljavih kanti", saveInitialStock: "Sačuvaj Početno Stanje",
+                truck: "Kamion", received: "Primljeno", shipped: "Poslato", washed: "Oprano", adjustment: "Podešavanje",
+                clean: "Čiste", dirty: "Prljave",
+                summaryTitle: "DNEVNI IZVEŠTAJ", binMovement: "Kretanje Kanti", totalReceived: "Ukupno primljeno prljavih", totalShipped: "Ukupno poslato čistih",
+                washingSummary: "Učinak Pranja", endOfDayStock: "Stanje na Kraju Dana", cleanBinsStock: "Čistih kanti na stanju", dirtyBinsStock: "Prljavih kanti na stanju",
+            },
+            es: {
+                cleanStock: "Limpios", dirtyStock: "Sucios",
+                truckWidgetTitle: "🚚 Operaciones de Camión", washWidgetTitle: "💧 Lavado de Bins",
+                truckNumber: "Número de Camión", dirtyIn: "Bins Sucios (Recibidos)", cleanOut: "Bins Limpios (Enviados)", saveTruck: "Guardar Entrada de Camión",
+                employeeName: "Nombre de Empleado", quantityWashed: "Cantidad Lavada", comment: "Comentario", saveWash: "Guardar Lavado",
+                adjustStock: "⚙️ Ajustar Stock", generateReport: "📊 Generar Reporte", todaysTransactions: "Transacciones de Hoy",
+                adjustStockTitle: "Ajustar Stock", newCleanStock: "Total Nuevo de Bins Limpios", newDirtyStock: "Total Nuevo de Bins Sucios", reasonForAdjustment: "Razón del Ajuste (Requerido)",
+                cancel: "Cancelar", save: "Guardar", close: "Cerrar", reportTitle: "Reporte Diario", copyData: "Copiar Reporte", copied: "¡Copiado!",
+                initialSetup: "Configuración Inicial", initialSetupText: "Por favor, ingrese el número actual de contenedores para comenzar.",
+                initialClean: "Bins Limpios Iniciales", initialDirty: "Bins Sucios Iniciales", saveInitialStock: "Guardar Stock Inicial",
+                truck: "Camión", received: "Recibido", shipped: "Enviado", washed: "Lavado", adjustment: "Ajuste",
+                clean: "Limpios", dirty: "Sucios",
+                summaryTitle: "RESUMEN DEL DÍA", binMovement: "Movimiento de Bins", totalReceived: "Total sucios recibidos", totalShipped: "Total limpios enviados",
+                washingSummary: "Resumen de Lavado", endOfDayStock: "Stock al Final del Día", cleanBinsStock: "Bins limpios en stock", dirtyBinsStock: "Bins sucios en stock",
+            }
+        };
+        
+        let state = { stock: { clean: 0, dirty: 0 }, transactions: [], language: 'en' };
+        
+        const ui = {
+            cleanStockCount: document.getElementById('clean-stock-count'), dirtyStockCount: document.getElementById('dirty-stock-count'),
+            truckWidget: document.getElementById('truck-widget'),
+            washWidget: document.getElementById('wash-widget'),
+            saveTruckBtn: document.getElementById('save-truck-btn'),
+            saveWashBtn: document.getElementById('save-wash-btn'),
+            adjustStockBtn: document.getElementById('adjust-stock-btn'), 
+            reportBtn: document.getElementById('report-btn'),
+            transactionsContainer: document.getElementById('transactions-container'),
+            adjustModal: document.getElementById('adjust-modal'), 
+            reportModal: document.getElementById('report-modal'),
+            setupModal: document.getElementById('setup-modal'),
+            saveAdjustBtn: document.getElementById('save-adjust-btn'), 
+            copyReportBtn: document.getElementById('copy-report-btn'),
+            reportTextArea: document.getElementById('report-text-area'), 
+            saveSetupBtn: document.getElementById('save-setup-btn'),
+            initialCleanInput: document.getElementById('initial-clean'), 
+            initialDirtyInput: document.getElementById('initial-dirty'),
+            adjustCleanInput: document.getElementById('adjust-clean'), 
+            adjustDirtyInput: document.getElementById('adjust-dirty'),
+            adjustReasonInput: document.getElementById('adjust-reason'),
+            langButtons: { en: document.getElementById('lang-en'), sr: document.getElementById('lang-sr'), es: document.getElementById('lang-es') }
+        };
+        
+        const saveState = () => localStorage.setItem('binTrackerState', JSON.stringify(state));
+        const loadState = () => { if (localStorage.getItem('binTrackerState')) state = JSON.parse(localStorage.getItem('binTrackerState')); };
+        const updateStockDisplay = () => { ui.cleanStockCount.textContent = state.stock.clean; ui.dirtyStockCount.textContent = state.stock.dirty; };
+        
+        const renderTodaysTransactions = () => {
+            ui.transactionsContainer.innerHTML = '';
+            const today = new Date().toLocaleDateString();
+            state.transactions.filter(t => new Date(t.timestamp).toLocaleDateString() === today).reverse().forEach(t => {
+                const div = document.createElement('div');
+                div.className = 'transaction-item';
+                const time = new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                let content = '';
+                const T = (key) => translations[state.language][key] || key;
+                switch (t.type) {
+                    case 'truck':
+                        content = `<div class="icon">🚚</div><div class="details"><b>${T('truck')} ${t.truckNumber}</b><br>
+                        ${t.dirtyIn > 0 ? `<span style="color:var(--danger-color)">+${t.dirtyIn} ${T('received')}</span>` : ''}
+                        ${t.dirtyIn > 0 && t.cleanOut > 0 ? ' / ' : ''}
+                        ${t.cleanOut > 0 ? `<span style="color:var(--success-color)">-${t.cleanOut} ${T('shipped')}</span>` : ''}
+                        <div class="time">${time}</div></div>`;
+                        break;
+                    case 'wash':
+                        content = `<div class="icon">💧</div><div class="details"><b>+${t.quantity} ${T('washed')}</b> by ${t.user}<br>
+                        ${t.comment ? `<span class="transaction-comment">${t.comment}</span><br>` : ''}
+                        <div class="time">${time}</div></div>`;
+                        break;
+                    case 'adjust':
+                        const cleanChange = `${T('clean')}: ${t.oldClean} → <b>${t.newClean}</b>`;
+                        const dirtyChange = `${T('dirty')}: ${t.oldDirty} → <b>${t.newDirty}</b>`;
+                        content = `<div class="icon">⚙️</div><div class="details"><b>${T('adjustment')}</b> (${cleanChange} / ${dirtyChange})<br>
+                        <span class="transaction-comment">${t.reason}</span><br>
+                        <div class="time">${time}</div></div>`;
+                        break;
+                }
+                div.innerHTML = content;
+                ui.transactionsContainer.appendChild(div);
+            });
+        };
+
+        const setLanguage = (lang) => {
+            state.language = lang;
+            document.querySelectorAll('[data-key]').forEach(elem => {
+                const key = elem.dataset.key;
+                if (translations[lang][key]) elem.textContent = translations[lang][key];
+            });
+            Object.values(ui.langButtons).forEach(btn => btn.classList.remove('active'));
+            ui.langButtons[lang].classList.add('active');
+            renderTodaysTransactions();
+            saveState();
+        };
+
+        const openModal = (modal) => modal.style.display = 'flex';
+        const closeModal = (modal) => modal.style.display = 'none';
+
+        document.querySelectorAll('.cancel-btn').forEach(btn => btn.addEventListener('click', (e) => closeModal(e.target.closest('.modal'))));
+        
+        document.querySelectorAll('.bin-counter').forEach(counter => {
+            const span = counter.querySelector('.bin-count-display');
+            counter.addEventListener('click', e => {
+                if (e.target.tagName !== 'BUTTON') return;
+                let count = parseInt(span.textContent, 10);
+                const op = e.target.dataset.op;
+                if (op === '+') count++;
+                else if (op === '-') count = Math.max(0, count - 1);
+                else if (op === 'add') count += parseInt(e.target.dataset.value, 10);
+                span.textContent = count;
+            });
+            span.addEventListener('click', () => {
+                const input = document.createElement('input'); input.type = 'number';
+                input.className = 'bin-count-input'; input.value = span.textContent;
+                span.replaceWith(input); input.focus();
+                const onBlur = () => { span.textContent = Math.max(0, parseInt(input.value, 10) || 0); input.replaceWith(span); };
+                input.addEventListener('blur', onBlur);
+                input.addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
+            });
+        });
+
+        ui.saveTruckBtn.addEventListener('click', () => {
+            const truckNumber = ui.truckWidget.querySelector('#truck-number').value.trim();
+            const dirtyIn = parseInt(ui.truckWidget.querySelector('[data-type="dirtyIn"] .bin-count-display').textContent, 10);
+            const cleanOut = parseInt(ui.truckWidget.querySelector('[data-type="cleanOut"] .bin-count-display').textContent, 10);
+            if (!truckNumber || (dirtyIn === 0 && cleanOut === 0)) { alert("Please enter a truck number and at least one bin."); return; }
+            state.stock.dirty += dirtyIn;
+            state.stock.clean -= cleanOut;
+            state.transactions.push({ type: 'truck', timestamp: new Date().toISOString(), truckNumber, dirtyIn, cleanOut });
+            saveState(); updateStockDisplay(); renderTodaysTransactions();
+            ui.truckWidget.querySelector('#truck-number').value = '';
+            ui.truckWidget.querySelectorAll('.bin-count-display').forEach(s => s.textContent = '0');
+        });
+
+        ui.saveWashBtn.addEventListener('click', () => {
+            const quantity = parseInt(ui.washWidget.querySelector('.bin-count-display').textContent, 10);
+            const user = ui.washWidget.querySelector('#wash-user').value.trim();
+            const comment = ui.washWidget.querySelector('#wash-comment').value.trim();
+            if (quantity === 0 || !user) { alert("Please enter a quantity and employee name."); return; }
+            if (quantity > state.stock.dirty) { alert("Cannot wash more bins than are in dirty stock."); return; }
+            state.stock.dirty -= quantity;
+            state.stock.clean += quantity;
+            state.transactions.push({ type: 'wash', timestamp: new Date().toISOString(), quantity, user, comment });
+            saveState(); updateStockDisplay(); renderTodaysTransactions();
+            ui.washWidget.querySelector('.bin-count-display').textContent = '0';
+            ui.washWidget.querySelector('#wash-user').value = '';
+            ui.washWidget.querySelector('#wash-comment').value = '';
+        });
+        
+        ui.adjustStockBtn.addEventListener('click', () => {
+            ui.adjustCleanInput.value = state.stock.clean;
+            ui.adjustDirtyInput.value = state.stock.dirty;
+            ui.adjustReasonInput.value = '';
+            openModal(ui.adjustModal);
+        });
+
+        ui.saveAdjustBtn.addEventListener('click', () => {
+            const newClean = parseInt(ui.adjustCleanInput.value, 10);
+            const newDirty = parseInt(ui.adjustDirtyInput.value, 10);
+            const reason = ui.adjustReasonInput.value.trim();
+            if (isNaN(newClean) || isNaN(newDirty) || !reason) { alert("Please enter valid numbers and a reason."); return; }
+            const oldClean = state.stock.clean; const oldDirty = state.stock.dirty;
+            state.stock.clean = newClean; state.stock.dirty = newDirty;
+            state.transactions.push({ type: 'adjust', timestamp: new Date().toISOString(), newClean, newDirty, oldClean, oldDirty, reason });
+            saveState(); updateStockDisplay(); renderTodaysTransactions(); closeModal(ui.adjustModal);
+        });
+        
+        ui.reportBtn.addEventListener('click', () => {
+            const T = (key) => translations[state.language][key] || key;
+            const today = new Date().toLocaleDateString();
+            const todaysTransactions = state.transactions.filter(t => new Date(t.timestamp).toLocaleDateString() === today);
+            const headers = "Date\tTime\tType\tTruck\tDirty In\tClean Out\tQuantity\tUser\tComment/Reason";
+            const tsvRows = todaysTransactions.map(t => {
+                const d = new Date(t.timestamp);
+                const date = d.toLocaleDateString('en-CA');
+                const time = d.toLocaleTimeString([], { hour12: true, hour: '2-digit', minute: '2-digit' });
+                switch(t.type) {
+                    case 'truck': return [date, time, t.type, t.truckNumber, t.dirtyIn, t.cleanOut, '', '', ''].join('\t');
+                    case 'wash': return [date, time, t.type, '', '', '', t.quantity, t.user, t.comment].join('\t');
+                    case 'adjust': return [date, time, t.type, '', '', '', '', '', t.reason].join('\t');
+                    default: return '';
+                }
+            });
+            const tsvText = [headers, ...tsvRows].join('\n');
+            const totalReceived = todaysTransactions.filter(t=>t.type==='truck').reduce((sum, t) => sum + t.dirtyIn, 0);
+            const totalShipped = todaysTransactions.filter(t=>t.type==='truck').reduce((sum, t) => sum + t.cleanOut, 0);
+            const washedByPerson = todaysTransactions.filter(t => t.type === 'wash').reduce((acc, t) => { acc[t.user] = (acc[t.user] || 0) + t.quantity; return acc; }, {});
+            let washingSummary = Object.entries(washedByPerson).map(([user, qty]) => `- ${user}: ${qty}`).join('\n');
+            if (Object.keys(washedByPerson).length === 0) washingSummary = "-";
+            const summaryText = `\n------------------------------------------\n           ${T('summaryTitle')}\n------------------------------------------\n\n${T('binMovement')}:\n- ${T('totalReceived')}: ${totalReceived}\n- ${T('totalShipped')}: ${totalShipped}\n\n${T('washingSummary')}:\n${washingSummary}\n\n${T('endOfDayStock')}:\n- ${T('cleanBinsStock')}: ${state.stock.clean}\n- ${T('dirtyBinsStock')}: ${state.stock.dirty}\n`;
+            ui.reportTextArea.value = tsvText + summaryText;
+            ui.copyReportBtn.querySelector('span').textContent = T('copyData');
+            openModal(ui.reportModal);
+        });
+        
+        ui.copyReportBtn.addEventListener('click', () => {
+            navigator.clipboard.writeText(ui.reportTextArea.value).then(() => {
+                const T = (key) => translations[state.language][key] || key;
+                const originalText = T('copyData');
+                ui.copyReportBtn.querySelector('span').textContent = T('copied');
+                setTimeout(() => { ui.copyReportBtn.querySelector('span').textContent = originalText; }, 2000);
+            });
+        });
+
+        const initializeApp = () => {
+            loadState();
+            if (!localStorage.getItem('binTrackerState')) openModal(ui.setupModal);
+            else { updateStockDisplay(); renderTodaysTransactions(); }
+            setLanguage(state.language);
+            Object.entries(ui.langButtons).forEach(([lang, btn]) => btn.addEventListener('click', () => setLanguage(lang)));
+            ui.saveSetupBtn.addEventListener('click', () => {
+                const initialClean = parseInt(ui.initialCleanInput.value, 10);
+                const initialDirty = parseInt(ui.initialDirtyInput.value, 10);
+                if (isNaN(initialClean) || isNaN(initialDirty)) { alert('Please enter valid numbers.'); return; }
+                state.stock.clean = initialClean; state.stock.dirty = initialDirty;
+                saveState(); updateStockDisplay(); closeModal(ui.setupModal);
+            });
+        };
+
+        initializeApp();
+    });
+    </script>
+</body>
+</html>
