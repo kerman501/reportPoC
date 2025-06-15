@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Moving Report Generator - v5.5 (Enhanced)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-title-logo" style="display: none"></div>
+      <div class="header-actions-wrapper">
+        <button id="startQrScanBtn" class="header-action-btn qr-btn">QR</button>
+        <button id="clearReportBtn" class="header-action-btn clear-btn">
+          Clear
+        </button>
+        <div class="theme-switch-wrapper">
+          <label for="themeToggle">Dark</label>
+          <label class="theme-switch">
+            <input type="checkbox" id="themeToggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+    </header>
+
+    <div style="padding: 0 20px">
+      <div class="report-section">
+        <div
+          id="qrScannerContainer"
+          style="display: none; margin-bottom: 15px; text-align: center"
+        >
+          <div
+            id="qrReader"
+            style="
+              width: 100%;
+              max-width: 400px;
+              margin: 0 auto 10px auto;
+              border-radius: 4px;
+              overflow: hidden;
+            "
+          ></div>
+          <button
+            id="closeQrScanBtn"
+            class="qr-scan-button secondary"
+            style="display: none"
+          >
+            Close Scanner
+          </button>
+        </div>
+
+        <div class="field-group top-field-group">
+          <div>
+            <label for="clientName">• Client Name:</label>
+            <input
+              type="text"
+              id="clientName"
+              placeholder="Enter client's name"
+            />
+          </div>
+          <div>
+            <label for="job">
+              • Job number:
+              <button
+                type="button"
+                id="copyJobNumberBtn"
+                class="icon-button"
+                title="Copy Job Number"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  fill="currentColor"
+                  class="bi bi-clipboard"
+                  viewBox="0 0 16 16"
+                >
+                  <path
+                    d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
+                  ></path>
+                  <path
+                    d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
+                  ></path>
+                </svg>
+              </button>
+            </label>
+            <input
+              type="text"
+              id="job"
+              placeholder="Enter job number (Lead ID)"
+            />
+          </div>
+          <div>
+            <label for="cuFt">• CuFt:</label>
+            <input type="text" id="cuFt" placeholder="Volume (e.g., 3655.00)" />
+          </div>
+        </div>
+
+        <div>
+          <label for="pdfFile" style="margin-top: 15px"
+            >Upload PDF Inventory:</label
+          >
+          <input type="file" id="pdfFile" accept="application/pdf" />
+          <div id="pdfStatus"></div>
+        </div>
+      </div>
+
+      <div class="report-section" id="photoSection">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+          "
+        >
+          <h2>Attach Photos for PDF Report</h2>
+          <div>
+            <input type="checkbox" id="enablePhotoCommentsToggle" />
+            <label for="enablePhotoCommentsToggle" class="checkbox-label"
+              >Enable Photo Comments</label
+            >
+          </div>
+        </div>
+
+        <div class="photo-actions-container">
+          <button id="takePhotoButton" class="photo-action-button">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-camera-fill"
+              viewBox="0 0 16 16"
+            >
+              <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+              <path
+                d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828-.828A2 2 0 0 1 3.172 4zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1m9-1a.5.5 0 1 0-1 0 .5.5 0 0 0 1 0"
+              />
+            </svg>
+            Take Photo
+          </button>
+          <input
+            type="file"
+            id="cameraPhotoInput"
+            accept="image/*"
+            capture="environment"
+          />
+
+          <button id="uploadPhotosButton" class="photo-action-button">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="currentColor"
+              class="bi bi-images"
+              viewBox="0 0 16 16"
+            >
+              <path d="M4.502 9a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3" />
+              <path
+                d="M14.002 13a2 2 0 0 1-2 2h-10a2 2 0 0 1-2-2V5A2 2 0 0 1 2 3a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-1.998 2M14 2H4a1 1 0 0 0-1 1h9.002a2 2 0 0 1 2 2v7A1 1 0 0 0 15 11V3a1 1 0 0 0-1-1M2.002 4a1 1 0 0 0-1 1v8l2.646-2.354a.5.5 0 0 1 .63-.062l2.66 1.773 3.71-3.71a.5.5 0 0 1 .577-.094l1.777 1.947V5a1 1 0 0 0-1-1z"
+              />
+            </svg>
+            Upload Photos
+          </button>
+          <input type="file" id="galleryPhotoInput" accept="image/*" multiple />
+        </div>
+        <div id="photoPreviews"></div>
+      </div>
+      <div class="report-section" id="photoSection"></div>
+
+      <div class="report-section" id="jobs-from-backend">
+        <h2>Jobs from Sheet</h2>
+        <div id="jobs-list-container">
+          <div class="loader"></div>
+        </div>
+      </div>
+      <div id="fields" class="report-section">
+        <h2>Report Details</h2>
+      </div>
+      <div id="fields" class="report-section">
+        <h2>Report Details</h2>
+      </div>
+
+      <div class="report-section">
+        <label for="generalComments">Additional General Comments:</label>
+        <textarea
+          id="generalComments"
+          rows="3"
+          placeholder="Enter any other comments here"
+        ></textarea>
+      </div>
+
+      <div class="report-section">
+        <label for="rating">Rating (1.0 - 5.0):</label>
+        <input
+          type="number"
+          id="rating"
+          value="4.0"
+          min="1"
+          max="5"
+          step="0.1"
+          placeholder="e.g., 4.5"
+        />
+      </div>
+
+      <div class="report-section">
+        <h2>Data for Google Sheets Cell</h2>
+        <div class="sheet-data-item">
+          <label for="sheetWarehouse">Warehouse:</label>
+          <select id="sheetWarehouse">
+            <option value="">Select Warehouse</option>
+            <option value="Masp1">Masp1</option>
+            <option value="Masp2">Masp2</option>
+            <option value="Masp3">Masp3</option>
+            <option value="Masp4">Masp4</option>
+            <option value="TRAF">TRAF</option>
+            <option value="LIC">LIC</option>
+            <option value="SKIL">SKIL</option>
+            <option value="BRON">BRON</option>
+            <option value="WTPL">WTPL</option>
+            <option value="ROS">ROS</option>
+            <option value="HALE">HALE</option>
+            <option value="PASS">PASS</option>
+            <option value="OtherWH">Other (Specify)</option>
+          </select>
+        </div>
+        <div class="sheet-data-item">
+          <input type="checkbox" id="useLoadingDock" style="margin-top: 10px" />
+          <label for="useLoadingDock" class="checkbox-label"
+            >Use "loading dock" for Address</label
+          >
+          <label for="sheetAddress" style="margin-top: 5px"
+            >Location/Address (e.g., A23R):</label
+          >
+          <input
+            type="text"
+            id="sheetAddress"
+            placeholder="e.g., A23R or Street Address"
+          />
+        </div>
+
+        <div class="field-group responsive-field-group">
+          <div class="sheet-data-item" style="flex: 1 1 180px">
+            <label for="sheetPallets">Pallets:</label>
+            <input
+              type="number"
+              id="sheetPallets"
+              placeholder="e.g., 2"
+              min="0"
+            />
+          </div>
+          <div class="sheet-data-item" style="flex: 1 1 180px">
+            <label for="sheetItems">Items:</label>
+            <input
+              type="number"
+              id="sheetItems"
+              placeholder="e.g., 20"
+              min="0"
+            />
+            <small
+              id="pdfItemCount"
+              style="
+                color: var(--text-secondary);
+                display: block;
+                margin-top: 3px;
+              "
+            ></small>
+          </div>
+          <div class="sheet-data-item" style="flex: 1 1 180px">
+            <label for="sheetEmployeeName">Employee Name:</label>
+            <input type="text" id="sheetEmployeeName" placeholder="Your Name" />
+          </div>
+        </div>
+
+        <div class="sheet-data-item">
+          <input type="checkbox" id="sheetBingoStatusOK" checked />
+          <label for="sheetBingoStatusOK" class="checkbox-label"
+            >Inventory OK (Bingo)?</label
+          >
+          <div
+            id="sheetBingoDetailsContainer"
+            style="display: none; margin-top: 5px"
+          >
+            <label for="sheetBingoDetails"
+              >Bingo Issues (e.g., #34v, #3m):</label
+            >
+            <input
+              type="text"
+              id="sheetBingoDetails"
+              placeholder="#ID void/missing"
+            />
+          </div>
+        </div>
+        <div class="sheet-data-item">
+          <label>Materials (approx. from PDF, please verify):</label>
+          <div class="materials-input-container">
+            <div class="material-item">
+              <label for="sheetMatTV" class="material-label">TV Boxes:</label>
+              <input
+                type="number"
+                id="sheetMatTV"
+                placeholder="0"
+                min="0"
+                class="material-input"
+              />
+            </div>
+            <div class="material-item">
+              <label for="sheetMatWR" class="material-label">Wardrobes:</label>
+              <input
+                type="number"
+                id="sheetMatWR"
+                placeholder="0"
+                min="0"
+                class="material-input"
+              />
+            </div>
+            <div class="material-item">
+              <label for="sheetMatBL" class="material-label">Blankets:</label>
+              <input
+                type="number"
+                id="sheetMatBL"
+                placeholder="0"
+                min="0"
+                class="material-input"
+              />
+            </div>
+          </div>
+          <small
+            id="pdfMaterialCounts"
+            style="
+              color: var(--text-secondary);
+              display: block;
+              margin-top: 3px;
+            "
+          ></small>
+        </div>
+
+        <div class="output-group">
+          <label for="sheetOutputString"
+            >Formatted String for Google Sheets:</label
+          >
+          <textarea id="sheetOutputString" readonly rows="2"></textarea>
+          <div
+            style="
+              margin-top: 10px;
+              display: flex;
+              flex-wrap: wrap;
+              gap: 10px;
+              align-items: center;
+            "
+          >
+            <button id="copySheetStringBtn" style="margin-top: 0">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                class="bi bi-clipboard-check"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10.854 7.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7.5 9.793l2.646-2.647a.5.5 0 0 1 .708 0"
+                />
+                <path
+                  d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
+                />
+                <path
+                  d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
+                />
+              </svg>
+              Copy Sheet String
+            </button>
+            <button
+              id="createShareReportBtn"
+              class="report-button button-simple-pink"
+              style="margin-top: 0"
+            >
+              <img
+                src="assets/logo.png"
+                alt="Logo"
+                class="icon"
+                id="reportButtonIcon"
+                style="display: none"
+              />
+              <span class="button-text-content">Create Report</span>
+            </button>
+          </div>
+          <div
+            id="pdfGenerateLoader"
+            class="loader"
+            style="margin-left: 0; margin-right: auto; margin-top: 10px"
+          ></div>
+          <div id="pdfGenerateStatus"></div>
+          <div id="sheetDataStatus"></div>
+        </div>
+      </div>
+
+      <button id="viewPdfBtn" onclick="openPdfModal()">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-eye-fill"
+          viewBox="0 0 16 16"
+        >
+          <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0" />
+          <path
+            d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"
+          />
+        </svg>
+        View PDF
+      </button>
+
+      <div id="pdfModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Uploaded PDF Document</h3>
+            <span
+              id="closePdfModalBtn"
+              class="modal-close-button-fixed"
+              title="Close PDF Viewer"
+              >&times;</span
+            >
+          </div>
+          <div id="pdfViewerContainer"></div>
+          <div class="pdf-page-navigation">
+            <button id="prevPage">Previous</button>
+            <span
+              >Page <span id="currentPageNum">0</span> of
+              <span id="totalPagesNum">0</span></span
+            >
+            <button id="nextPage">Next</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-section pallet-paper-section">
+        <h2>Data for Pallet Paper</h2>
+        <div class="pallet-data-display">
+          <div>Job Number: <span id="palletJobNumber"></span></div>
+          <div>Client Name: <span id="palletClientName"></span></div>
+          <div>Date: <span id="palletCurrentDate"></span></div>
+        </div>
+        <button id="copyPalletDataBtn">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            fill="currentColor"
+            class="bi bi-clipboard-plus"
+            viewBox="0 0 16 16"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M8 7a.5.5 0 0 1 .5.5V9H10a.5.5 0 0 1 0 1H8.5v1.5a.5.5 0 0 1-1 0V10H6a.5.5 0 0 1 0-1h1.5V7.5A.5.5 0 0 1 8 7"
+            />
+            <path
+              d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z"
+            />
+            <path
+              d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
+            />
+          </svg>
+          Copy for Pallet Paper
+        </button>
+        <div id="palletDataStatus"></div>
+      </div>
+
+      <details>
+        <summary>Google Sheets Hyperlink Formula Generator</summary>
+        <div class="report-section hyperlink-config-section">
+          <h2>Google Sheets Hyperlink Formula Generator</h2>
+          <div class="sheet-data-item">
+            <label for="spreadsheetIdInput">Spreadsheet ID:</label>
+            <input
+              type="text"
+              id="spreadsheetIdInput"
+              placeholder="Enter Google Spreadsheet ID (will be saved)"
+            />
+          </div>
+          <div class="sheet-data-item">
+            <label for="sheetNameInput">Sheet Name (e.g., MM/DD/YYYY):</label>
+            <input
+              type="text"
+              id="sheetNameInput"
+              placeholder="Default: current date"
+            />
+          </div>
+          <div class="sheet-data-item">
+            <label for="startRowInput"
+              >Start Row for Formula in Sheet (e.g., 6):</label
+            >
+            <input
+              type="number"
+              id="startRowInput"
+              value="6"
+              min="1"
+              placeholder="Enter starting row number"
+            />
+          </div>
+          <button id="generateSheetFormulaBtn">
+            Generate Google Sheets Formula
+          </button>
+          <div class="output-group" style="margin-top: 10px">
+            <label for="generatedHyperlinkOutput"
+              >Copy this formula into the first cell (e.g., A6) and drag
+              down:</label
+            >
+            <textarea
+              id="generatedHyperlinkOutput"
+              readonly
+              rows="4"
+            ></textarea>
+          </div>
+        </div>
+      </details>
+
+      <details class="rules-section">
+        <summary>Packing Rules</summary>
+        <div class="rules-content">
+          <h3>WHAT'S THE ITEM ?</h3>
+          <h4>SOFA/COUCH:</h4>
+          <ol>
+            <li>
+              Must be fully shrinked and wrapped in 3 blankets(top, middle,
+              bottom).
+            </li>
+            <li>
+              High/Large sofa legs must be removed from the sofa and placed in a
+              box.
+            </li>
+            <li>
+              Cushions/Pillows from sofa must be fully shrinked and completely
+              wrapped in blankets.
+            </li>
+          </ol>
+          <h4>MATTRESS:</h4>
+          <ol>
+            <li>
+              Must be fully shrinked, wrapped in 2 blankets (top and bottom) and
+              placed in the box.
+            </li>
+            <li>
+              It can't be folded and the blue mattress cover can't be used.
+            </li>
+          </ol>
+          <h4>BED FRAME:</h4>
+          <ol>
+            <li>
+              Must be disassembled and the screws from it must be placed in the
+              Hardware box.
+            </li>
+            <li>Wooden parts must be completely wrapped in blankets.</li>
+            <li>Metal/Plastic parts must be fully shrinked.</li>
+          </ol>
+          <h4>
+            DRESSER, ARMOIRE, CREDENZA, CABINET, NIGHTSTAND, BOOKCASE, TV STAND:
+          </h4>
+          <ol>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered all over with the corners to protect the edges or
+              cardboard instead of corners.
+            </li>
+            <li>
+              Must be covered with cardbord on the front side (to protect the
+              doors/glass).
+            </li>
+          </ol>
+          <h4>DESK/TABLE (DINING, COFFEE, CONSOLE, ENTRYWAY, etc.):</h4>
+          <ol>
+            <li>
+              Must be disassembled. The legs must be removed from the table/desk
+              top.
+            </li>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered all over with the corners to protect the edges or
+              cardboard instead corners.
+            </li>
+            <li>
+              Must be covered with cardbord on the top surface (to protect the
+              tabletop).
+            </li>
+          </ol>
+          <h4>HARDWARE/SCREWS:</h4>
+          <ol>
+            <li>Must be placed in a separate box.</li>
+            <li>Must be labeled with a sticker.</li>
+            <li>Must be marked on the inventory list as Hardware box.</li>
+          </ol>
+          <h4>TV/MONITOR:</h4>
+          <ol>
+            <li>Must be covered with blankets.</li>
+            <li>Must be placed in the TV box.</li>
+            <li>Must be one blanket at the bottom of the box.</li>
+          </ol>
+          <h4>PAINTINGS, MIRRORS, GLASS in TV BOX:</h4>
+          <ol>
+            <li>Can be placed in a TV box.</li>
+            <li>Must be separated by blankets or cardboard in TV box.</li>
+            <li>Must be one blanket at the bottom of the TV box.</li>
+          </ol>
+          <h4>LARGE PAINTINGS, MIRRORS, GLASS without TV BOX:</h4>
+          <ol>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered with cardbord on both sides (to protect the
+              surfaces).
+            </li>
+          </ol>
+          <p>
+            <strong>LAMP</strong> - Must be disassembled and placed in a box or
+            wrapped in bubble wrap or in blankets.
+          </p>
+          <p><strong>SUITCASE</strong> - Must be fully shrinked.</p>
+          <p><strong>RUG/CARPET</strong> - Must be fully shrinked.</p>
+          <p><strong>AC</strong> - Must be fully shrinked.</p>
+          <p>
+            <strong>BICYCLE/PELOTON</strong> - Must be completely wrapped in
+            blankets.
+          </p>
+
+          <h3>WHAT'S THE ITEM MADE OF ?</h3>
+          <h4>
+            WOODEN FURNITURE/PIECES (ARMOIRE, DRESSER, BOOKCASE, TABLE,
+            NIGHTSTAND, BED FRAME, HEADBOARD, FOOTBOARD, TV STAND, ARMCHAIR,
+            CHAIR, CREDENZA,etc.):
+          </h4>
+          <ol>
+            <li>Must be completely wrapped in blankets.</li>
+            <li>
+              Must be covered all over with the corners to protect the edges or
+              cardboard instead of corners.
+            </li>
+            <li>
+              Must be covered with cardboard on the top or on the front side (to
+              protect the surfaces) if required.
+            </li>
+          </ol>
+          <h4>LEATHER FURNITURE/PIECES:</h4>
+          <ol>
+            <li>Must be completely wrapped in blankets without shrink.</li>
+          </ol>
+          <h4>METAL OR PLASTIC FURNITURE/PIECES:</h4>
+          <ol>
+            <li>Must be completely shrinked.</li>
+          </ol>
+
+          <h3>PAY ATTENTION !</h3>
+          <h4>TV BOX - Must be used only for:</h4>
+          <ol>
+            <li>TV/Monitor</li>
+            <li>Paintings/Mirrors/Glass (Separated)</li>
+          </ol>
+          <p>Nothing else.</p>
+          <h4>WARDROBE BOX - Must be used only for:</h4>
+          <ol>
+            <li>Clothes with hangers</li>
+          </ol>
+          <p>Nothing else.</p>
+          <p>
+            It's not permitted to store LIVE PLANTS in all PoC storage
+            facilities.
+          </p>
+          <p>
+            It's not permitted to store ANY FOOD in all PoC storage facilities.
+          </p>
+
+          <h3>PLEASE NOTE !</h3>
+          <p>
+            COMPLETELY/FULLY WRAPPED IN BLANKETS OR SHRINKED MEANS THAT THE
+            ENTIRE SURFACE OF THE ITEM IS PROTECTED, NO UNCOVETED AREAS.
+          </p>
+        </div>
+      </details>
+
+      <details class="rules-section">
+        <summary>Stacking Rules</summary>
+        <div class="rules-content">
+          <ol>
+            <li>
+              Items MUST be within the edges of the pallet on three sides.
+            </li>
+            <li>
+              The pallets MUST not get too high (Maximum height - 2 Wardrobes).
+            </li>
+            <li>Heavy items MUST not be placed on the top of the pallet.</li>
+            <li>Light items MUST not be placed on the bottom of the pallet.</li>
+            <li>Half-empty boxes MUST be placed on top only.</li>
+            <li>
+              Stacks of heavy boxes MUST not be high and corners/cardboard MUST
+              be used to prevent damage to the boxes.
+            </li>
+            <li>
+              Unstable items on the pallet MUST be taped with force for
+              stability.
+            </li>
+            <li>
+              If there is a Mattress in the Job you MUST find out right away
+              what items it will stand on the pallet with.
+            </li>
+            <li>
+              DO NOT place tall vertical items on the pallet without good
+              support.
+            </li>
+            <li>
+              Furniture legs MUST never stick out to the sides when the pallet
+              is done.
+            </li>
+            <li>
+              Pallet MUST be marked if there's something fragile inside, if it's
+              not stable, if there are missing/voided items, etc.
+            </li>
+            <li>Final taping and shrinking MUST be done with force.</li>
+          </ol>
+        </div>
+      </details>
+    </div>
+    <script src="js/config.js" defer></script>
+    <script src="js/localStorageHandler.js" defer></script>
+    <script src="js/uiHandler.js" defer></script>
+    <script src="js/photoHandler.js" defer></script>
+    <script src="js/pdfHandler.js" defer></script>
+    <script src="js/formHandler.js" defer></script>
+    <script src="js/reportGenerator.js" defer></script>
+    <script src="js/qrScanner.js" defer></script>
+    <script src="js/main.js" defer></script>
+  </body>
+</html>
