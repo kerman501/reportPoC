@@ -166,7 +166,7 @@ function clearReportData() {
 async function fetchAndDisplayJobs() {
   // URL нашего бэкенда. Убедись, что он правильный!
   // Мы запрашиваем таблицу 'in' по умолчанию.
-  const apiUrl = "https://backend-test-pi-three.vercel.app/api/data?table=in";
+  const apiUrl = "https://backend-test-pi-three.vercel.app/api/data";
 
   const container = document.getElementById("jobs-list-container");
   if (!container) return;
