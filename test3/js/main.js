@@ -122,7 +122,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("copyPalletDataBtn")
     ?.addEventListener("click", () => {
       updatePalletPaperDisplay();
-      fetchAndDisplayJobs();
       copyPalletDataToClipboard();
     });
 
@@ -231,9 +230,29 @@ function initializeAppLogic() {
 
   const jobInput = document.getElementById("job");
   if (jobInput) {
-    jobInput.addEventListener("input", (e) =>
-      handleManualJobInput(e.target.value)
-    );
+    jobInput.addEventListener("input", (e) => {
+      const jobId = e.target.value.trim();
+      const debounceIndicator = document.getElementById("debounce-indicator");
+
+      // Сбрасываем предыдущий таймер и анимацию
+      clearTimeout(debounceTimer);
+      debounceIndicator.classList.remove("active");
+      debounceIndicator.style.transition = "none"; // Убираем анимацию, чтобы сброс был мгновенным
+
+      // Этот трюк заставляет браузер обработать изменения перед новым запуском
+      // Он надежнее, чем reflow trick
+      requestAnimationFrame(() => {
+        debounceIndicator.style.transition = "width 10s linear"; // Возвращаем анимацию
+
+        if (jobId && jobId.length > 5) {
+          debounceIndicator.classList.add("active"); // Запускаем заново
+          debounceTimer = setTimeout(() => {
+            findAndPopulateJob(jobId);
+            debounceIndicator.classList.remove("active");
+          }, DEBOUNCE_DELAY);
+        }
+      });
+    });
   }
 
   // Здесь мы будем вызывать логику для QR-сканера
@@ -246,8 +265,12 @@ function initializeAppLogic() {
 function handleManualJobInput(jobId) {
   const debounceIndicator = document.getElementById("debounce-indicator");
   clearTimeout(debounceTimer);
+  debounceIndicator.style.transition = "none"; // Мгновенно сбрасываем transition
   debounceIndicator.classList.remove("active");
-  void debounceIndicator.offsetWidth; // CSS reflow trick
+  // Используем setTimeout(..., 0), чтобы дать браузеру обработать сброс перед новым запуском
+  setTimeout(() => {
+    debounceIndicator.style.transition = "width 10s linear";
+  }, 0);
 
   if (jobId && jobId.trim().length > 5) {
     debounceIndicator.classList.add("active");
