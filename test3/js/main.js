@@ -1,6 +1,9 @@
-let todaysJobs = []; // Здесь будет храниться список работ на день
-let debounceTimer; // Таймер для отложенного запроса
-const DEBOUNCE_DELAY = 1000; // Задержка в мс (1 секунда)
+// --- Глобальные переменные ---
+let todaysJobs = [];
+let debounceTimer;
+const DEBOUNCE_DELAY = 10000; // Новая задержка 10 секунд
+let lastFetchTime = 0; // Для ограничения запросов (Этап 3)
+const RATE_LIMIT_MS = 60000; // 1 минута
 
 document.addEventListener("DOMContentLoaded", () => {
   initializeAppLogic();
@@ -224,134 +227,109 @@ async function fetchAndDisplayJobs() {
 }
 
 function initializeAppLogic() {
-  // 1. Пытаемся загрузить работы из localStorage при старте
   loadJobsFromLocalStorage();
 
-  // 2. Вешаем "слушателя" на поле ввода номера работы
   const jobInput = document.getElementById("job");
-  // Находим наш новый индикатор
+  if (jobInput) {
+    jobInput.addEventListener("input", (e) =>
+      handleManualJobInput(e.target.value)
+    );
+  }
+
+  // Здесь мы будем вызывать логику для QR-сканера
+  // Например, в твоем qrScanner.js в onScanSuccess:
+  // onScanSuccess: (decodedText) => { findAndPopulateJob(decodedText); }
+}
+
+// --- Обработчики ввода ---
+
+function handleManualJobInput(jobId) {
   const debounceIndicator = document.getElementById("debounce-indicator");
+  clearTimeout(debounceTimer);
+  debounceIndicator.classList.remove("active");
+  void debounceIndicator.offsetWidth; // CSS reflow trick
 
-  if (jobInput && debounceIndicator) {
-    jobInput.addEventListener("input", (e) => {
-      const jobId = e.target.value.trim();
-
-      // Сбрасываем предыдущий таймер и анимацию
-      clearTimeout(debounceTimer);
+  if (jobId && jobId.trim().length > 5) {
+    debounceIndicator.classList.add("active");
+    debounceTimer = setTimeout(() => {
+      findAndPopulateJob(jobId.trim());
       debounceIndicator.classList.remove("active");
-      // Этот трюк с reflow нужен, чтобы анимация могла запуститься заново
-      void debounceIndicator.offsetWidth;
-
-      if (jobId && jobId.length > 5) {
-        // Запускаем новый таймер и анимацию
-        debounceIndicator.classList.add("active");
-
-        debounceTimer = setTimeout(() => {
-          debounceIndicator.classList.remove("active");
-          handleJobIdInput(jobId);
-        }, DEBOUNCE_DELAY);
-      }
-    });
+    }, DEBOUNCE_DELAY);
   }
 }
 
-// --- Функции для работы с localStorage ---
+// --- Главная функция поиска ---
 
-function saveJobsToLocalStorage(jobs) {
-  const today = new Date().toLocaleDateString(); // "6/15/2025"
-  const dataToStore = {
-    savedDate: today,
-    jobs: jobs,
-  };
-  localStorage.setItem("dailyJobsData", JSON.stringify(dataToStore));
-  console.log(`Сохранено ${jobs.length} работ на дату ${today}`);
-}
+async function findAndPopulateJob(jobId) {
+  populateFormWithJobData(null); // Сразу очищаем поля
 
-function loadJobsFromLocalStorage() {
-  const storedData = localStorage.getItem("dailyJobsData");
-  if (storedData) {
-    const parsedData = JSON.parse(storedData);
-    const today = new Date().toLocaleDateString();
-
-    // Проверяем, что сохраненные данные - сегодняшние
-    if (parsedData.savedDate === today) {
-      todaysJobs = parsedData.jobs;
-      console.log(
-        `Загружено ${todaysJobs.length} работ из localStorage за сегодня.`
-      );
-      // Сразу отрисовываем список
-      renderJobsList(todaysJobs);
-    } else {
-      console.log("Найдены устаревшие данные, очищаем localStorage.");
-      localStorage.removeItem("dailyJobsData");
-    }
-  }
-}
-
-// --- Логика обработки ввода и запроса к API ---
-
-function handleJobIdInput(jobId) {
-  // Сначала ищем в уже загруженных данных
   const foundJob = todaysJobs.find((job) => job.leadid === jobId);
 
   if (foundJob) {
-    console.log(`Работа ${jobId} найдена локально. Запрос к API не требуется.`);
+    showStatusMessage("Job found locally.", false);
     populateFormWithJobData(foundJob);
   } else {
-    // Если не нашли локально (или массив пуст), идем на сервер
-    console.log(
-      `Работа ${jobId} не найдена локально. Отправляем запрос к API.`
-    );
-    fetchJobsFromServer(jobId);
+    // Ограничение "не чаще раза в минуту" (Этап 3)
+    const now = Date.now();
+    if (now - lastFetchTime < RATE_LIMIT_MS) {
+      const remaining = Math.round(
+        (RATE_LIMIT_MS - (now - lastFetchTime)) / 1000
+      );
+      showStatusMessage(
+        `Please wait ${remaining}s before new server search.`,
+        true
+      );
+      return;
+    }
+    lastFetchTime = now; // Обновляем время последнего запроса
+    await fetchJobsFromServer(jobId);
   }
 }
 
-async function fetchJobsFromServer(jobId) {
-  const container = document.getElementById("jobs-list-container");
-  container.innerHTML = '<div class="loader"></div>'; // Показываем загрузчик
+// --- Запрос к API ---
 
+async function fetchJobsFromServer(jobId) {
+  showStatusMessage("Searching on server...", false);
   const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`;
 
   try {
     const response = await fetch(apiUrl);
+    const jsonData = await response.json();
+
     if (!response.ok) {
-      // Получаем текст ошибки с сервера, если он есть
-      const errorData = await response.json();
-      throw new Error(errorData.error || `Network error: ${response.status}`);
+      throw new Error(jsonData.error || `Network error: ${response.status}`);
     }
 
-    const jsonData = await response.json();
-    todaysJobs = jsonData.data; // Обновляем наш глобальный массив
+    todaysJobs = jsonData.data;
+    saveJobsToLocalStorage(todaysJobs);
+    renderJobsList(todaysJobs);
 
-    saveJobsToLocalStorage(todaysJobs); // Сохраняем в localStorage
-    renderJobsList(todaysJobs); // Отрисовываем список
-
-    // После успешной загрузки всего списка, найдем и заполним форму для текущего jobId
     const currentJob = todaysJobs.find((job) => job.leadid === jobId);
     if (currentJob) {
+      showStatusMessage("Jobs list updated from server.", false);
       populateFormWithJobData(currentJob);
+    } else {
+      // Этого не должно случиться, если бэкенд работает правильно, но на всякий случай
+      showStatusMessage(`Job ${jobId} not found in today's list.`, true);
     }
   } catch (error) {
     console.error("Ошибка при загрузке работ с сервера:", error);
-    container.innerHTML = `<p style="color: var(--color-error);">${error.message}</p>`;
+    showStatusMessage(error.message, true);
   }
 }
 
-// --- Функции для отрисовки и заполнения ---
+// --- Функции для UI и localStorage ---
 
 function renderJobsList(jobs) {
   const container = document.getElementById("jobs-list-container");
-  container.innerHTML = ""; // Очищаем
+  if (!container) return;
+  container.innerHTML = "";
 
   if (jobs && jobs.length > 0) {
     jobs.forEach((job) => {
       const jobButton = document.createElement("button");
       jobButton.className = "job-button";
-      jobButton.innerHTML = `
-        <span class="job-button-leadid">${job.leadid}</span>
-        <span class="job-button-customer">${job.customerfullname}</span>
-        <span class="job-button-cuft">${job.inventoryvolumecuft} CuFt</span>
-      `;
+      jobButton.innerHTML = `<span>${job.leadid}</span><span>${job.customerfullname}</span>`;
       jobButton.addEventListener("click", () => populateFormWithJobData(job));
       container.appendChild(jobButton);
     });
@@ -361,15 +339,56 @@ function renderJobsList(jobs) {
 }
 
 function populateFormWithJobData(job) {
-  // Очищаем поля перед заполнением
-  document.getElementById("clientName").value = "";
-  // document.getElementById('job').value = ''; // Не очищаем поле, по которому искали
-  document.getElementById("cuFt").value = "";
+  const clientNameInput = document.getElementById("clientName");
+  const cuFtInput = document.getElementById("cuFt");
+  const jobInput = document.getElementById("job");
 
-  // Заполняем
-  document.getElementById("clientName").value = job.customerfullname || "";
-  document.getElementById("job").value = job.leadid || "";
-  document.getElementById("cuFt").value = job.inventoryvolumecuft || "";
+  if (job) {
+    // Если передали объект работы - заполняем
+    clientNameInput.value = job.customerfullname || "";
+    jobInput.value = job.leadid || "";
+    cuFtInput.value = job.inventoryvolumecuft || "";
+  } else {
+    // Если передали null - очищаем
+    clientNameInput.value = "";
+    cuFtInput.value = "";
+  }
+}
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+function showStatusMessage(message, isError) {
+  const statusEl = document.getElementById("job-status-message");
+  if (!statusEl) return;
+
+  statusEl.textContent = message;
+  statusEl.className = "job-status-message"; // Сброс классов
+  if (isError) {
+    statusEl.classList.add("error");
+  } else {
+    statusEl.classList.add("success");
+  }
+
+  // Прячем сообщение через 5 секунд
+  setTimeout(() => {
+    statusEl.textContent = "";
+  }, 5000);
+}
+
+function saveJobsToLocalStorage(jobs) {
+  const today = new Date().toLocaleDateString();
+  const dataToStore = { savedDate: today, jobs: jobs };
+  localStorage.setItem("dailyJobsData", JSON.stringify(dataToStore));
+}
+
+function loadJobsFromLocalStorage() {
+  const storedData = localStorage.getItem("dailyJobsData");
+  if (storedData) {
+    const parsedData = JSON.parse(storedData);
+    const today = new Date().toLocaleDateString();
+    if (parsedData.savedDate === today) {
+      todaysJobs = parsedData.jobs;
+      renderJobsList(todaysJobs);
+    } else {
+      localStorage.removeItem("dailyJobsData");
+    }
+  }
 }

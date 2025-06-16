@@ -1129,31 +1129,33 @@ label[for="job"] .icon-button {
     margin-bottom: 0px;
   }
 }
-/* --- Стили для индикатора задержки ввода --- */
+/* --- Стили для индикатора и статуса --- */
 
 .debounce-indicator {
   height: 3px;
-  width: 0%; /* Изначально невидимый */
-  background-color: var(
-    --accent-color
-  ); /* Используем цвет акцента из твоих стилей */
+  width: 0%;
+  background-color: var(--accent-color);
   border-radius: 2px;
-  transition: opacity 0.3s ease; /* Плавное появление/исчезновение */
-  opacity: 0;
+  /* Используем transition вместо animation - это надежнее */
+  transition: width 10s linear;
 }
 
 .debounce-indicator.active {
   width: 100%;
-  opacity: 1;
-  animation: debounce-fill 1s linear forwards;
 }
 
-/* Анимация заполнения полоски */
-@keyframes debounce-fill {
-  from {
-    width: 0%;
-  }
-  to {
-    width: 100%;
-  }
+.job-status-message {
+  font-size: 0.9em;
+  padding: 5px 0;
+  height: 1.2em; /* Резервируем место, чтобы верстка не прыгала */
+  transition: opacity 0.5s ease-out;
+  opacity: 1;
+}
+
+.job-status-message.error {
+  color: var(--color-error);
+}
+
+.job-status-message.success {
+  color: var(--color-success);
 }
