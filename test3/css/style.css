@@ -1129,3 +1129,31 @@ label[for="job"] .icon-button {
     margin-bottom: 0px;
   }
 }
+/* --- Стили для индикатора задержки ввода --- */
+
+.debounce-indicator {
+  height: 3px;
+  width: 0%; /* Изначально невидимый */
+  background-color: var(
+    --accent-color
+  ); /* Используем цвет акцента из твоих стилей */
+  border-radius: 2px;
+  transition: opacity 0.3s ease; /* Плавное появление/исчезновение */
+  opacity: 0;
+}
+
+.debounce-indicator.active {
+  width: 100%;
+  opacity: 1;
+  animation: debounce-fill 1s linear forwards;
+}
+
+/* Анимация заполнения полоски */
+@keyframes debounce-fill {
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
+}

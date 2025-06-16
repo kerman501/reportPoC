@@ -229,20 +229,28 @@ function initializeAppLogic() {
 
   // 2. Вешаем "слушателя" на поле ввода номера работы
   const jobInput = document.getElementById("job");
-  if (jobInput) {
+  // Находим наш новый индикатор
+  const debounceIndicator = document.getElementById("debounce-indicator");
+
+  if (jobInput && debounceIndicator) {
     jobInput.addEventListener("input", (e) => {
-      const jobId = e.target.value;
+      const jobId = e.target.value.trim();
 
-      // Сбрасываем предыдущий таймер
+      // Сбрасываем предыдущий таймер и анимацию
       clearTimeout(debounceTimer);
+      debounceIndicator.classList.remove("active");
+      // Этот трюк с reflow нужен, чтобы анимация могла запуститься заново
+      void debounceIndicator.offsetWidth;
 
-      // Запускаем новый таймер
-      debounceTimer = setTimeout(() => {
-        // Проверяем, что в поле есть что-то похожее на номер работы
-        if (jobId && jobId.length > 5) {
+      if (jobId && jobId.length > 5) {
+        // Запускаем новый таймер и анимацию
+        debounceIndicator.classList.add("active");
+
+        debounceTimer = setTimeout(() => {
+          debounceIndicator.classList.remove("active");
           handleJobIdInput(jobId);
-        }
-      }, DEBOUNCE_DELAY);
+        }, DEBOUNCE_DELAY);
+      }
     });
   }
 }
