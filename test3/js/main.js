@@ -1,4 +1,9 @@
+let todaysJobs = []; // Здесь будет храниться список работ на день
+let debounceTimer; // Таймер для отложенного запроса
+const DEBOUNCE_DELAY = 1000; // Задержка в мс (1 секунда)
+
 document.addEventListener("DOMContentLoaded", () => {
+  initializeAppLogic();
   // Initial UI setup
   applyCurrentTheme();
   setupThemeToggle();
@@ -216,4 +221,147 @@ async function fetchAndDisplayJobs() {
     container.textContent = "Error loading jobs. Please try again later.";
     container.style.color = "var(--color-error)";
   }
+}
+
+function initializeAppLogic() {
+  // 1. Пытаемся загрузить работы из localStorage при старте
+  loadJobsFromLocalStorage();
+
+  // 2. Вешаем "слушателя" на поле ввода номера работы
+  const jobInput = document.getElementById("job");
+  if (jobInput) {
+    jobInput.addEventListener("input", (e) => {
+      const jobId = e.target.value;
+
+      // Сбрасываем предыдущий таймер
+      clearTimeout(debounceTimer);
+
+      // Запускаем новый таймер
+      debounceTimer = setTimeout(() => {
+        // Проверяем, что в поле есть что-то похожее на номер работы
+        if (jobId && jobId.length > 5) {
+          handleJobIdInput(jobId);
+        }
+      }, DEBOUNCE_DELAY);
+    });
+  }
+}
+
+// --- Функции для работы с localStorage ---
+
+function saveJobsToLocalStorage(jobs) {
+  const today = new Date().toLocaleDateString(); // "6/15/2025"
+  const dataToStore = {
+    savedDate: today,
+    jobs: jobs,
+  };
+  localStorage.setItem("dailyJobsData", JSON.stringify(dataToStore));
+  console.log(`Сохранено ${jobs.length} работ на дату ${today}`);
+}
+
+function loadJobsFromLocalStorage() {
+  const storedData = localStorage.getItem("dailyJobsData");
+  if (storedData) {
+    const parsedData = JSON.parse(storedData);
+    const today = new Date().toLocaleDateString();
+
+    // Проверяем, что сохраненные данные - сегодняшние
+    if (parsedData.savedDate === today) {
+      todaysJobs = parsedData.jobs;
+      console.log(
+        `Загружено ${todaysJobs.length} работ из localStorage за сегодня.`
+      );
+      // Сразу отрисовываем список
+      renderJobsList(todaysJobs);
+    } else {
+      console.log("Найдены устаревшие данные, очищаем localStorage.");
+      localStorage.removeItem("dailyJobsData");
+    }
+  }
+}
+
+// --- Логика обработки ввода и запроса к API ---
+
+function handleJobIdInput(jobId) {
+  // Сначала ищем в уже загруженных данных
+  const foundJob = todaysJobs.find((job) => job.leadid === jobId);
+
+  if (foundJob) {
+    console.log(`Работа ${jobId} найдена локально. Запрос к API не требуется.`);
+    populateFormWithJobData(foundJob);
+  } else {
+    // Если не нашли локально (или массив пуст), идем на сервер
+    console.log(
+      `Работа ${jobId} не найдена локально. Отправляем запрос к API.`
+    );
+    fetchJobsFromServer(jobId);
+  }
+}
+
+async function fetchJobsFromServer(jobId) {
+  const container = document.getElementById("jobs-list-container");
+  container.innerHTML = '<div class="loader"></div>'; // Показываем загрузчик
+
+  const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`;
+
+  try {
+    const response = await fetch(apiUrl);
+    if (!response.ok) {
+      // Получаем текст ошибки с сервера, если он есть
+      const errorData = await response.json();
+      throw new Error(errorData.error || `Network error: ${response.status}`);
+    }
+
+    const jsonData = await response.json();
+    todaysJobs = jsonData.data; // Обновляем наш глобальный массив
+
+    saveJobsToLocalStorage(todaysJobs); // Сохраняем в localStorage
+    renderJobsList(todaysJobs); // Отрисовываем список
+
+    // После успешной загрузки всего списка, найдем и заполним форму для текущего jobId
+    const currentJob = todaysJobs.find((job) => job.leadid === jobId);
+    if (currentJob) {
+      populateFormWithJobData(currentJob);
+    }
+  } catch (error) {
+    console.error("Ошибка при загрузке работ с сервера:", error);
+    container.innerHTML = `<p style="color: var(--color-error);">${error.message}</p>`;
+  }
+}
+
+// --- Функции для отрисовки и заполнения ---
+
+function renderJobsList(jobs) {
+  const container = document.getElementById("jobs-list-container");
+  container.innerHTML = ""; // Очищаем
+
+  if (jobs && jobs.length > 0) {
+    jobs.forEach((job) => {
+      const jobButton = document.createElement("button");
+      jobButton.className = "job-button";
+      jobButton.innerHTML = `
+        <span class="job-button-leadid">${job.leadid}</span>
+        <span class="job-button-customer">${job.customerfullname}</span>
+        <span class="job-button-cuft">${job.inventoryvolumecuft} CuFt</span>
+      `;
+      jobButton.addEventListener("click", () => populateFormWithJobData(job));
+      container.appendChild(jobButton);
+    });
+  } else {
+    container.textContent = "No jobs found.";
+  }
+}
+
+function populateFormWithJobData(job) {
+  // Очищаем поля перед заполнением
+  document.getElementById("clientName").value = "";
+  // document.getElementById('job').value = ''; // Не очищаем поле, по которому искали
+  document.getElementById("cuFt").value = "";
+
+  // Заполняем
+  document.getElementById("clientName").value = job.customerfullname || "";
+  document.getElementById("job").value = job.leadid || "";
+  document.getElementById("cuFt").value = job.inventoryvolumecuft || "";
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
 }
