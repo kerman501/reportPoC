@@ -384,7 +384,7 @@ function printPalletPaper() {
   // \u00A0 - это неразрывный пробел, чтобы сохранить отступы
   document.getElementById(
     "print-pallets"
-  ).textContent = `Pallets:\u00A0\u00A0\u00A0\u00A0/ ${pallets || "___"}`;
+  ).textContent = `Pallets:\u00A0\u00A0\u00A0\u00A0/ ${pallets || ""}`;
 
   // Заполняем материалы
   document.getElementById("print-blankets").textContent = `BLANKETS: ${

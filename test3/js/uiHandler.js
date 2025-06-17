@@ -334,7 +334,7 @@ function updateAndSetFieldStatus(elementId, value, status) {
 function getCurrentDateFormatted(separator = "") {
   const today = new Date();
   const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}${separator}${month}${separator}${day}`;
+  const month = String(today.getMonth() + 1).padStart(2, "0"); // MM
+  const day = String(today.getDate()).padStart(2, "0"); // DD
+  return `${month}${separator}${day}${separator}${year}`;
 }
