@@ -1248,3 +1248,81 @@ label[for="job"] .icon-button {
     size: A4;
   }
 }
+/* --- Начало: Новые стили для списка "Today's Jobs" --- */
+
+/* 1. Контейнер для всего списка.
+   Используем Grid-сетку, чтобы элементы красиво располагались
+   в несколько колонок на больших экранах. */
+#jobs-list-container {
+  display: grid;
+  grid-template-columns: 1fr; /* Одна колонка по умолчанию */
+  gap: 12px; /* Расстояние между карточками */
+}
+
+/* 2. Стиль для каждой отдельной карточки-задачи.
+   Создаем эффект "карточки" с помощью фона, рамки и тени. */
+.job-item {
+  display: flex;
+  align-items: center;
+  background-color: var(--primary-bg); /* Используем фоновый цвет из темы */
+  border: 1px solid var(--border-color);
+  border-radius: 8px; /* Скругляем углы */
+  padding: 16px;
+  transition: all 0.2s ease-in-out; /* Плавный переход для анимаций */
+  cursor: pointer;
+  border-left: 5px solid transparent; /* Акцентная линия, которая появится при наведении */
+}
+
+/* 3. Эффект при наведении курсора.
+   Карточка будет немного приподниматься и слева появится розовая линия. */
+.job-item:hover {
+  border-left-color: var(--company-pink); /* Показываем розовый акцент */
+  transform: translateY(-3px); /* Слегка приподнимаем карточку */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background-color: var(--secondary-bg);
+}
+
+/* Небольшая корректировка тени для темной темы */
+html.dark-mode .job-item:hover {
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 4. Стиль для номера задачи.
+   Выделяем его фирменным розовым цветом. */
+.job-item-number {
+  font-size: 0.9em;
+  font-weight: 600;
+  color: var(--company-pink);
+  background-color: var(--secondary-bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-right: 16px; /* Отступ от имени клиента */
+  min-width: 70px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+/* 5. Стиль для имени клиента. */
+.job-item-name {
+  font-size: 1.05em;
+  font-weight: 500;
+  color: var(--text-primary);
+  flex-grow: 1; /* Имя занимает все оставшееся место */
+}
+
+/* 6. Адаптивность.
+   На экранах шире 768px список будет отображаться в две колонки. */
+@media (min-width: 768px) {
+  #jobs-list-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* На очень широких экранах - в три колонки. */
+@media (min-width: 1200px) {
+  #jobs-list-container {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* --- Конец: Новые стили для списка "Today's Jobs" --- */

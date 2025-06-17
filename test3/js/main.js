@@ -110,16 +110,39 @@ async function findAndPopulateJob(jobId, options = {}) {
 function renderJobsList(jobs) {
   const container = document.getElementById("jobs-list-container");
   if (!container) return;
+
+  // Полностью очищаем список перед отрисовкой
   container.innerHTML = "";
+
   if (jobs && jobs.length > 0) {
+    // Проходим по каждой задаче из полученного списка
     jobs.forEach((job) => {
-      const jobButton = document.createElement("button");
-      jobButton.className = "job-button";
-      jobButton.innerHTML = `<span>${job.leadid}</span><span>${job.customerfullname}</span>`;
-      jobButton.addEventListener("click", () => populateFormWithJobData(job));
-      container.appendChild(jobButton);
+      // Шаг 1: Создаем главный div-контейнер для карточки
+      // и присваиваем ему класс 'job-item' из нашего нового CSS
+      const jobItem = document.createElement("div");
+      jobItem.className = "job-item";
+
+      // Шаг 2: Создаем span для номера задачи
+      const jobNumber = document.createElement("span");
+      jobNumber.className = "job-item-number"; // Присваиваем класс для стилизации номера
+      jobNumber.textContent = job.leadid; // Вставляем номер из данных
+      jobItem.appendChild(jobNumber); // Добавляем в карточку
+
+      // Шаг 3: Создаем span для имени клиента
+      const jobName = document.createElement("span");
+      jobName.className = "job-item-name"; // Присваиваем класс для стилизации имени
+      jobName.textContent = job.customerfullname; // Вставляем имя из данных
+      jobItem.appendChild(jobName); // Добавляем в карточку
+
+      // Шаг 4: Назначаем действие по клику на всю карточку
+      // При клике будет вызываться твоя функция populateFormWithJobData
+      jobItem.addEventListener("click", () => populateFormWithJobData(job));
+
+      // Шаг 5: Добавляем полностью сформированную карточку в общий контейнер
+      container.appendChild(jobItem);
     });
   } else {
+    // Если список задач пуст, выводим сообщение
     container.textContent = "No jobs found for today.";
   }
 }
