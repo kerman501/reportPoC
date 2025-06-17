@@ -9,18 +9,14 @@ const RATE_LIMIT_MS = 60000; // 1 минута
 
 // --- Точка входа приложения ---
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Инициализируем нашу новую логику (загрузка из localStorage, слушатель на ввод)
+  // Инициализируем нашу новую логику (загрузка из localStorage, слушатель на ввод)
   initializeAppLogic();
 
-  // 2. Весь твой остальной код инициализации остается здесь
+  // Весь твой остальной код инициализации, который мы не трогаем
   applyCurrentTheme();
   setupThemeToggle();
   createQuestionFields();
-
-  if (!initializePdfJsWorker()) {
-    console.warn("PDF.js worker initialization failed.");
-  }
-
+  initializePdfJsWorker();
   populateInitialFormValues();
   const savedState = loadFormState();
   if (savedState) {
@@ -29,24 +25,22 @@ document.addEventListener("DOMContentLoaded", () => {
   processUrlParameters();
   initializePhotoHandling();
   setupFormEventListeners();
-
   if (typeof setupQrScanner === "function") {
     setupQrScanner();
   }
-
   updateSheetOutputString();
   generateSheetFormula();
   updateWarehouseHighlight();
   updatePalletPaperDisplay();
 
-  // 3. Все глобальные слушатели кнопок также остаются здесь
+  // Все глобальные слушатели кнопок
   document
     .getElementById("clearReportBtn")
     ?.addEventListener("click", clearReportData);
   document
     .getElementById("pdfFile")
     ?.addEventListener("change", handlePdfFileChange);
-  // ... и все остальные твои слушатели ...
+  // ... и другие твои слушатели ...
 });
 
 // ===================================================================
@@ -104,7 +98,7 @@ async function findAndPopulateJob(jobId, options = {}) {
   if (foundJob) {
     if (showMessages) showStatusMessage("Job found locally.", false);
     populateFormWithJobData(foundJob);
-    return true;
+    return true; // Нашли локально
   }
 
   const now = Date.now();
@@ -122,7 +116,7 @@ async function findAndPopulateJob(jobId, options = {}) {
 
   lastFetchTime = now;
   if (showMessages) showStatusMessage("Searching on server...", false);
-  const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`;
+  const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`; // <-- НЕ ЗАБУДЬ ПРОВЕРИТЬ URL
 
   try {
     const response = await fetch(apiUrl);
@@ -139,7 +133,7 @@ async function findAndPopulateJob(jobId, options = {}) {
       if (showMessages)
         showStatusMessage("Jobs list updated from server.", false);
       populateFormWithJobData(currentJob);
-      return true;
+      return true; // Нашли на сервере
     }
   } catch (error) {
     console.error("Ошибка при загрузке работ с сервера:", error);
@@ -149,14 +143,15 @@ async function findAndPopulateJob(jobId, options = {}) {
   if (clearFieldsOnFail) {
     populateFormWithJobData(null, jobId);
   }
-  return false;
+  return false; // Не нашли
 }
+
+// --- Вспомогательные функции, которые мы не трогаем ---
 
 function renderJobsList(jobs) {
   const container = document.getElementById("jobs-list-container");
   if (!container) return;
   container.innerHTML = "";
-
   if (jobs && jobs.length > 0) {
     jobs.forEach((job) => {
       const jobButton = document.createElement("button");
@@ -189,12 +184,10 @@ function populateFormWithJobData(job, currentJobId = null) {
 function showStatusMessage(message, isError) {
   const statusEl = document.getElementById("job-status-message");
   if (!statusEl) return;
-
   statusEl.textContent = message;
   statusEl.className = "job-status-message";
   if (isError) statusEl.classList.add("error");
   else statusEl.classList.add("success");
-
   setTimeout(() => {
     statusEl.textContent = "";
   }, 5000);
@@ -218,13 +211,4 @@ function loadJobsFromLocalStorage() {
       localStorage.removeItem("dailyJobsData");
     }
   }
-}
-
-// --- Твоя оригинальная функция очистки отчета, которую мы не трогаем ---
-function clearReportData() {
-  if (!confirm("Are you sure you want to clear report data? ...")) {
-    return;
-  }
-  // ... твой код очистки ...
-  alert("Report data has been cleared.");
 }

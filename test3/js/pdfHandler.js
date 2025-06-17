@@ -1,3 +1,5 @@
+// js/pdfHandler.js - Финальная версия с полной логикой
+
 let loadedPdfDocument = null;
 let currentPageInView = 1;
 
@@ -31,6 +33,7 @@ async function readPDF(file) {
     fullText += content.items.map((item) => item.str).join(" ") + "\n";
   }
 
+  // Этот блок - твоя оригинальная логика, которая заполняет вторичные поля. Мы ее не трогаем.
   const inventoryLines = fullText.toLowerCase().split("\n");
   const itemCountMatch = fullText.match(/Number of Pieces\s*:\s*(\d+)/i);
 
@@ -101,35 +104,45 @@ async function readPDF(file) {
   );
 
   updateSheetOutputString();
-  return fullText;
+  return fullText; // Возвращаем полный текст для дальнейшей обработки
 }
 
+// --- ГЛАВНАЯ ФУНКЦИЯ-ОБРАБОТЧИК PDF (полностью переписана с новой логикой) ---
 async function handlePdfFileChange(e) {
   const file = e.target.files[0];
   if (!file) return;
 
+  const viewPdfBtn = document.getElementById("viewPdfBtn");
   updateStatusMessage("pdfStatus", `Loading ${file.name}...`, false);
 
   try {
-    // ШАГ 1: Позволяем readPDF заполнить все "вторичные" поля (материалы, кол-во итемов и т.д.)
+    // ШАГ 1: Вызываем твою оригинальную функцию readPDF.
+    // Она, как и раньше, заполнит все поля с материалами, CuFt и т.д.
     const rawText = await readPDF(file);
     updateStatusMessage(
       "pdfStatus",
       `Successfully loaded: ${file.name}`,
       "success"
     );
+    if (viewPdfBtn) viewPdfBtn.style.display = "inline-block";
 
-    // ШАГ 2: Извлекаем ключевые данные (номер работы и имя) из текста PDF
+    // ШАГ 2: Извлекаем ТОЛЬКО номер работы и имя клиента из текста PDF, используя твою логику.
     let pdfJobId = "";
-    const jobRegex = /Shipment Number\s*.*?(\b\d{5,}\b)/i;
-    const jobMatch = rawText.match(jobRegex);
-    if (jobMatch && jobMatch[1]) {
-      pdfJobId = jobMatch[1];
+    const jobRegexPatterns = [
+      /Shipment Number\s*.*?(\b\d{5,}\b)/i,
+      /Job number\s*.*?(\b\d{5,}\b)/i,
+    ];
+    for (const pattern of jobRegexPatterns) {
+      const jobMatch = rawText.match(pattern);
+      if (jobMatch && jobMatch[1]) {
+        pdfJobId = jobMatch[1];
+        break;
+      }
     }
 
     let pdfClientName = "";
     const shipperNameRegex = /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])/i;
-    const nameMatch = rawText.match(shipperNameRegex);
+    let nameMatch = rawText.match(shipperNameRegex);
     if (nameMatch && nameMatch[1]) {
       pdfClientName = nameMatch[1]
         .trim()
@@ -138,50 +151,79 @@ async function handlePdfFileChange(e) {
         .join(" ");
     }
 
+    // Если номер работы не найден в PDF, мы не можем продолжить основную логику.
     if (!pdfJobId) {
       showStatusMessage("Could not find Job Number in PDF.", true);
+      // Но мы все равно пытаемся вставить имя клиента, если оно нашлось
+      document.getElementById("clientName").value = pdfClientName;
       return;
     }
 
-    // ШАГ 3: Запускаем "Дерево Решений" на основе твоей логики
+    // ШАГ 3: Запускаем "Дерево Решений"
     const formJobInput = document.getElementById("job");
     const formJobId = formJobInput.value.trim();
 
-    // Сценарий 1: Поле работы пустое
+    // Сценарий A: Поле "Job Number" на форме пустое
     if (!formJobId) {
-      console.log("Сценарий PDF: Поле работы пустое.");
       formJobInput.value = pdfJobId; // Вставляем номер из PDF
       const wasFound = await findAndPopulateJob(pdfJobId, {
         clearFieldsOnFail: false,
         showMessages: true,
       });
+      // Если бэкенд/локальный кеш ничего не нашел, используем имя из PDF как запасной вариант
       if (!wasFound) {
-        // Если бэкенд ничего не нашел, используем имя из PDF как фоллбэк
         document.getElementById("clientName").value = pdfClientName;
       }
     }
-    // Сценарий 2: Номера совпадают
+    // Сценарий Б: Номера на форме и в PDF совпадают
     else if (formJobId === pdfJobId) {
-      console.log(
-        "Сценарий PDF: Номера работ совпадают. Заполняем только доп. инфо."
-      );
-      // Ничего не делаем с ключевыми полями. Они уже заполнены.
-      // readPDF уже заполнил все остальное.
+      // Ничего не делаем с ключевыми полями. readPDF уже заполнил все остальное.
       showStatusMessage("PDF data matches current job.", false);
     }
-    // Сценарий 3: Конфликт номеров
+    // Сценарий В: Конфликт номеров
     else {
-      console.log("Сценарий PDF: Конфликт номеров работ.");
       showStatusMessage(
         `PDF job (${pdfJobId}) does not match current job (${formJobId}). Please clear report.`,
         true
       );
     }
+
+    // ШАГ 4: Запускаем твою оригинальную логику заполнения чек-листа
+    // Этот код взят из твоего файла, чтобы эта фича не сломалась.
+    const lowerCaseText = rawText.toLowerCase();
+    questions.forEach((q) => {
+      const select = document.getElementById(q.id);
+      if (select) {
+        if (select.dataset.status === "user-modified") return;
+
+        const keywords = keywordMap[q.id] || [];
+        let itemFound =
+          keywords.length > 0 &&
+          keywords.some((kw) => lowerCaseText.includes(kw.toLowerCase()));
+
+        if (attentionFieldIds.includes(q.id)) {
+          select.value = defaultValuesConfig[q.id];
+        } else if (itemFound) {
+          select.value = "YES";
+        } else {
+          select.value =
+            defaultValuesConfig[q.id] ||
+            q.options.find((opt) => opt.startsWith("NO ")) ||
+            q.options[1];
+        }
+        setFieldStatus(select, "pdf-informed");
+        if (select.value === "NO") {
+          select.dispatchEvent(new Event("change"));
+        }
+      }
+    });
   } catch (err) {
     console.error("Error processing PDF file:", err);
     showStatusMessage("Failed to process PDF.", true);
   }
 }
+
+// --- Эти функции мы также не трогаем ---
 
 async function renderPdfPage(pdfDoc, pageNum, canvas) {
   const page = await pdfDoc.getPage(pageNum);
