@@ -1161,46 +1161,72 @@ label[for="job"] .icon-button {
 }
 /* Стили для печатного шаблона */
 #printable-pallet-paper {
-  display: none; /* Скрыто по умолчанию */
+  display: none; /* По умолчанию скрыто */
   color: black;
   background-color: white;
-  font-family: "Arial", sans-serif;
-  text-align: center;
-  padding: 20mm 10mm; /* Отступы для листа A4 */
+  font-family: Arial, sans-serif; /* Основной шрифт Arial */
+
+  /* Эти свойства создают точную рамку и размер под лист А4 */
+  position: relative; /* Нужно для позиционирования нижнего блока */
+  width: 180mm; /* Ширина контента на листе A4 с отступами */
+  height: 267mm; /* Высота контента на листе A4 с отступами */
+  margin: 0;
+  padding: 10mm; /* Отступы от края, которые формируют "поля" */
+  border: 1px solid black; /* Та самая тонкая рамка */
 }
 
+/* Общий стиль для всех текстовых блоков */
+#printable-pallet-paper > div {
+  text-align: center; /* Все блоки по центру по умолчанию */
+  font-weight: bold;
+}
+
+/* Имя клиента: Arial 95pt, жирный, по центру, с линией */
 .print-name {
-  font-size: 80px;
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 95pt;
+  border-bottom: 1px solid black;
+  padding-bottom: 15mm;
+  margin-bottom: 15mm;
 }
+
+/* Дата: Arial 78pt, жирный, по центру, с линией */
 .print-date {
-  font-size: 50px;
-  font-weight: bold;
-  margin-bottom: 20px;
+  font-size: 78pt;
+  border-bottom: 1px solid black;
+  padding-bottom: 15mm;
+  margin-bottom: 15mm;
 }
+
+/* Номер работы: Arial 78pt, жирный, по центру */
 .print-job {
-  font-size: 60px;
-  font-weight: bold;
-  margin-bottom: 40px;
+  font-size: 78pt;
+  margin-bottom: 15mm;
 }
-.print-items {
-  font-size: 40px;
-  font-weight: bold;
-  text-align: left;
-  margin-bottom: 40px;
+
+/* Items и Pallets: Arial 60pt, жирный, по центру */
+.print-items-line {
+  font-size: 60pt;
 }
+
+/* Блок с материалами: Arial 21pt, жирный, выравнивание по левому краю */
 .print-materials {
-  font-size: 30px;
-  font-weight: bold;
-  text-align: left;
+  /* Позиционируем блок абсолютно внизу контейнера */
   position: absolute;
-  bottom: 20mm;
+  bottom: 10mm;
   left: 10mm;
   right: 10mm;
+
+  /* Используем Flexbox для распределения элементов по горизонтали */
+  display: flex;
+  justify-content: space-between; /* Расставляет элементы с равным отступом */
+}
+.print-materials span {
+  /* Каждый отдельный материал */
+  font-size: 21pt;
+  font-weight: bold;
 }
 
-/* Правила, которые применяются ТОЛЬКО ПРИ ПЕЧАТИ */
+/* --- Правила, которые применяются ТОЛЬКО ПРИ ПЕЧАТИ --- */
 @media print {
   /* Сначала скрываем всё, что есть на странице */
   body > * {
@@ -1211,9 +1237,10 @@ label[for="job"] .icon-button {
   #printable-pallet-paper,
   #printable-pallet-paper * {
     display: block !important;
+    box-sizing: border-box; /* Важно для точных размеров */
   }
 
-  /* Убираем тени и лишние эффекты для чистого листа */
+  /* Сбрасываем все стили браузера для печати */
   @page {
     margin: 0;
     size: A4;
@@ -1221,5 +1248,10 @@ label[for="job"] .icon-button {
   body {
     margin: 0;
     padding: 0;
+  }
+
+  /* Переопределяем display для flex-контейнера, т.к. выше мы сделали все display:block */
+  .print-materials {
+    display: flex !important;
   }
 }

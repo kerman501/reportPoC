@@ -348,6 +348,8 @@ function clearReportData() {
   alert("Report data has been cleared.");
 }
 
+// ЗАМЕНИТЬ В main.js
+
 function printPalletPaper() {
   // Шаг 1: Собираем данные из полей формы
   const clientName = document.getElementById("clientName").value;
@@ -357,28 +359,43 @@ function printPalletPaper() {
   const blankets = document.getElementById("sheetMatBL").value;
   const wardrobes = document.getElementById("sheetMatWR").value;
   const tvBox = document.getElementById("sheetMatTV").value;
-  const currentDate = getCurrentDateFormatted("/"); // Эта функция уже есть в uiHandler.js
+  // Функция getCurrentDateFormatted() уже существует в uiHandler.js
+  const currentDate =
+    typeof getCurrentDateFormatted === "function"
+      ? getCurrentDateFormatted("/")
+      : new Date().toLocaleDateString();
 
-  // Проверка, есть ли что печатать
   if (!clientName && !jobNumber) {
     alert("Please enter a Client Name or Job Number before printing.");
     return;
   }
 
-  // Шаг 2: Заполняем наш скрытый HTML-шаблон
-  document.getElementById("print-client-name").textContent = clientName;
+  // Шаг 2: Заполняем наш обновленный скрытый HTML-шаблон
+  document.getElementById("print-client-name").textContent = clientName || " ";
   document.getElementById("print-current-date").textContent = currentDate;
-  document.getElementById("print-job-number").textContent = `#${jobNumber}`;
-
-  let itemsPalletsText = `Items: ${items || "___"}\nPallets: ${
-    pallets || "___"
+  document.getElementById("print-job-number").textContent = `#${
+    jobNumber || " "
   }`;
-  document.getElementById("print-items-pallets").innerText = itemsPalletsText; // Используем innerText для поддержки переноса строки
 
-  let materialsText = `BLANKETS: ${blankets || "___"}   WARDROBES: ${
+  // Заполняем разделенные поля
+  document.getElementById("print-items").textContent = `Items: ${
+    items || "___"
+  }`;
+  // \u00A0 - это неразрывный пробел, чтобы сохранить отступы
+  document.getElementById(
+    "print-pallets"
+  ).textContent = `Pallets:\u00A0\u00A0\u00A0\u00A0/ ${pallets || "___"}`;
+
+  // Заполняем материалы
+  document.getElementById("print-blankets").textContent = `BLANKETS: ${
+    blankets || "___"
+  }`;
+  document.getElementById("print-wardrobes").textContent = `WARDROBES: ${
     wardrobes || "___"
-  }   TV BOX: ${tvBox || "___"}`;
-  document.getElementById("print-materials").textContent = materialsText;
+  }`;
+  document.getElementById("print-tvbox").textContent = `TV BOX: ${
+    tvBox || "___"
+  }`;
 
   // Шаг 3: Вызываем системное окно печати
   window.print();
