@@ -378,9 +378,7 @@ function printPalletPaper() {
   }`;
 
   // Заполняем разделенные поля
-  document.getElementById("print-items").textContent = `Items: ${
-    items || "___"
-  }`;
+  document.getElementById("print-items").textContent = `Items: ${items || ""}`;
   // \u00A0 - это неразрывный пробел, чтобы сохранить отступы
   document.getElementById(
     "print-pallets"
@@ -388,14 +386,12 @@ function printPalletPaper() {
 
   // Заполняем материалы
   document.getElementById("print-blankets").textContent = `BLANKETS: ${
-    blankets || "___"
+    blankets || ""
   }`;
   document.getElementById("print-wardrobes").textContent = `WARDROBES: ${
-    wardrobes || "___"
+    wardrobes || ""
   }`;
-  document.getElementById("print-tvbox").textContent = `TV BOX: ${
-    tvBox || "___"
-  }`;
+  document.getElementById("print-tvbox").textContent = `TV BOX: ${tvBox || ""}`;
 
   // Шаг 3: Вызываем системное окно печати
   window.print();

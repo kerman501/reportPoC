@@ -1203,6 +1203,9 @@ label[for="job"] .icon-button {
     padding: 10mm;
     font-weight: bold;
   }
+  #print-pallets {
+    margin-top: auto;
+  }
   .print-name {
     font-size: 80pt;
     border-bottom: 1.5px solid black;
