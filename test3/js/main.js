@@ -225,7 +225,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("clearReportBtn")
     ?.addEventListener("click", clearReportData);
-
+  document
+    .getElementById("printPalletBtn")
+    ?.addEventListener("click", printPalletPaper);
   document
     .getElementById("copyJobNumberBtn")
     ?.addEventListener("click", (event) => {
@@ -344,4 +346,40 @@ function clearReportData() {
     updateWarehouseHighlight();
 
   alert("Report data has been cleared.");
+}
+
+function printPalletPaper() {
+  // Шаг 1: Собираем данные из полей формы
+  const clientName = document.getElementById("clientName").value;
+  const jobNumber = document.getElementById("job").value;
+  const items = document.getElementById("sheetItems").value;
+  const pallets = document.getElementById("sheetPallets").value;
+  const blankets = document.getElementById("sheetMatBL").value;
+  const wardrobes = document.getElementById("sheetMatWR").value;
+  const tvBox = document.getElementById("sheetMatTV").value;
+  const currentDate = getCurrentDateFormatted("/"); // Эта функция уже есть в uiHandler.js
+
+  // Проверка, есть ли что печатать
+  if (!clientName && !jobNumber) {
+    alert("Please enter a Client Name or Job Number before printing.");
+    return;
+  }
+
+  // Шаг 2: Заполняем наш скрытый HTML-шаблон
+  document.getElementById("print-client-name").textContent = clientName;
+  document.getElementById("print-current-date").textContent = currentDate;
+  document.getElementById("print-job-number").textContent = `#${jobNumber}`;
+
+  let itemsPalletsText = `Items: ${items || "___"}\nPallets: ${
+    pallets || "___"
+  }`;
+  document.getElementById("print-items-pallets").innerText = itemsPalletsText; // Используем innerText для поддержки переноса строки
+
+  let materialsText = `BLANKETS: ${blankets || "___"}   WARDROBES: ${
+    wardrobes || "___"
+  }   TV BOX: ${tvBox || "___"}`;
+  document.getElementById("print-materials").textContent = materialsText;
+
+  // Шаг 3: Вызываем системное окно печати
+  window.print();
 }

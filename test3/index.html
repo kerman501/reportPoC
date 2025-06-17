@@ -185,9 +185,6 @@
       <div id="fields" class="report-section">
         <h2>Report Details</h2>
       </div>
-      <div id="fields" class="report-section">
-        <h2>Report Details</h2>
-      </div>
 
       <div class="report-section">
         <label for="generalComments">Additional General Comments:</label>
@@ -473,6 +470,12 @@
           </svg>
           Copy for Pallet Paper
         </button>
+        <button id="printPalletBtn" class="secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer-fill" viewBox="0 0 16 16">
+                <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zm4 11a1 1 0 1 1-2 0 1 1 0 0 1 2 0zM4 5.5a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5z"/>
+            </svg>
+            Print Pallet Paper
+        </button>
         <div id="palletDataStatus"></div>
       </div>
 
@@ -727,6 +730,15 @@
         </div>
       </details>
     </div>
+
+    <div id="printable-pallet-paper">
+      <div class="print-name" id="print-client-name"></div>
+      <div class="print-date" id="print-current-date"></div>
+      <div class="print-job" id="print-job-number"></div>
+      <div class="print-items" id="print-items-pallets"></div>
+      <div class="print-materials" id="print-materials"></div>
+    </div>
+
     <script src="js/config.js" defer></script>
     <script src="js/localStorageHandler.js" defer></script>
     <script src="js/uiHandler.js" defer></script>

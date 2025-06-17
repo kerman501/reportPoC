@@ -116,7 +116,7 @@ async function handlePdfFileChange(e) {
   updateStatusMessage("pdfStatus", `Loading ${file.name}...`, false);
 
   try {
-    // ШАГ 1: Вызываем твою оригинальную функцию readPDF.
+    // ШАГ 1: Вызываем вашу оригинальную функцию readPDF.
     // Она, как и раньше, заполнит все поля с материалами, CuFt и т.д.
     const rawText = await readPDF(file);
     updateStatusMessage(
@@ -126,7 +126,11 @@ async function handlePdfFileChange(e) {
     );
     if (viewPdfBtn) viewPdfBtn.style.display = "inline-block";
 
-    // ШАГ 2: Извлекаем ТОЛЬКО номер работы и имя клиента из текста PDF, используя твою логику.
+    // =========================================================================
+    // ШАГ 2: ИЗВЛЕКАЕМ ДАННЫЕ (ПОЛНЫЙ РАБОЧИЙ КОД ИЗ СТАРОЙ ВЕРСИИ)
+    // =========================================================================
+
+    // --- Поиск номера работы ---
     let pdfJobId = "";
     const jobRegexPatterns = [
       /Shipment Number\s*.*?(\b\d{5,}\b)/i,
@@ -140,31 +144,72 @@ async function handlePdfFileChange(e) {
       }
     }
 
+    // --- Поиск имени клиента (полный алгоритм с fallback-вариантами) ---
     let pdfClientName = "";
-    // Возвращаем старое, более точное регулярное выражение с "заглядыванием вперед"
+    // Основной, самый точный метод
     const shipperNameRegex =
       /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])(?=\s*(?:Shipment Number|PIECE OF CAKE|USDOT|\d{2}\/\d{2}\/\d{4}|Origin Loading Address))/i;
     let nameMatch = rawText.match(shipperNameRegex);
 
     if (nameMatch && nameMatch[1]) {
-      // Очищаем и форматируем имя
-      pdfClientName = nameMatch[1]
-        .replace(/[\n\r]+/g, " ")
-        .trim()
-        .split(/\s+/)
-        .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-        .join(" ");
+      pdfClientName = nameMatch[1].replace(/[\n\r]+/g, " ").trim();
+    } else if (pdfJobId) {
+      // Запасной вариант №1: ищем имя между "Shipment Number" и самим номером
+      try {
+        const nameBetweenRegex = new RegExp(
+          `Shipment\\s*Number\\s*([A-Za-z][A-Za-z\\s'-]*[A-Za-z])\\s*${pdfJobId}`,
+          "i"
+        );
+        nameMatch = rawText.match(nameBetweenRegex);
+        if (nameMatch && nameMatch[1]) pdfClientName = nameMatch[1].trim();
+      } catch (regexError) {
+        console.error("Regex error for client name (fallback 1):", regexError);
+      }
     }
 
-    // Если номер работы не найден в PDF, мы не можем продолжить основную логику.
+    if (!pdfClientName) {
+      // Запасной вариант №2: ищем имя рядом с подписью клиента
+      const customerSigRegex =
+        /Customer Signature(?:[\s\S]*?Date[\s\S]*?){2}([A-Za-z\s'-]+?)(?:\n|\r|X\s|$)/i;
+      nameMatch = rawText.match(customerSigRegex);
+      if (nameMatch && nameMatch[1]) {
+        let sigName = nameMatch[1]
+          .replace(/packer pac/i, "")
+          .replace(/Date/i, "")
+          .trim();
+        if (
+          sigName.length > 1 &&
+          sigName.toLowerCase() !== "x" &&
+          sigName.split(/\s+/).length <= 3
+        ) {
+          pdfClientName = sigName;
+        }
+      }
+    }
+
+    // Финальное форматирование имени в нужный вид (с заглавных букв)
+    const formattedPdfClientName = pdfClientName
+      ? pdfClientName
+          .split(/\s+/)
+          .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+          .filter(Boolean)
+          .join(" ")
+      : "";
+
+    // =========================================================================
+    // КОНЕЦ БЛОКА ИЗВЛЕЧЕНИЯ ДАННЫХ
+    // =========================================================================
+
     if (!pdfJobId) {
       showStatusMessage("Could not find Job Number in PDF.", true);
-      // Но мы все равно пытаемся вставить имя клиента, если оно нашлось
-      document.getElementById("clientName").value = pdfClientName;
+      // Пытаемся вставить имя клиента, даже если номер не нашелся
+      if (document.getElementById("clientName").value === "") {
+        document.getElementById("clientName").value = formattedPdfClientName;
+      }
       return;
     }
 
-    // ШАГ 3: Запускаем "Дерево Решений"
+    // ШАГ 3: Запускаем "Дерево Решений" (используя данные, полученные выше)
     const formJobInput = document.getElementById("job");
     const formJobId = formJobInput.value.trim();
 
@@ -176,14 +221,13 @@ async function handlePdfFileChange(e) {
         showMessages: true,
       });
       // Если бэкенд/локальный кеш ничего не нашел, используем имя из PDF как запасной вариант
-      if (!wasFound) {
-        document.getElementById("clientName").value = pdfClientName;
+      if (!wasFound && document.getElementById("clientName").value === "") {
+        document.getElementById("clientName").value = formattedPdfClientName;
       }
     }
     // Сценарий Б: Номера на форме и в PDF совпадают
     else if (formJobId === pdfJobId) {
-      // Ничего не делаем с ключевыми полями. readPDF уже заполнил все остальное.
-      showStatusMessage("PDF data matches current job.", false);
+      showStatusMessage("PDF data matches current job.", "success");
     }
     // Сценарий В: Конфликт номеров
     else {
@@ -193,8 +237,7 @@ async function handlePdfFileChange(e) {
       );
     }
 
-    // ШАГ 4: Запускаем твою оригинальную логику заполнения чек-листа
-    // Этот код взят из твоего файла, чтобы эта фича не сломалась.
+    // ШАГ 4: Запускаем оригинальную логику заполнения чек-листа
     const lowerCaseText = rawText.toLowerCase();
     questions.forEach((q) => {
       const select = document.getElementById(q.id);

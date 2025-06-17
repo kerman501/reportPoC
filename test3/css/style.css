@@ -1159,3 +1159,67 @@ label[for="job"] .icon-button {
 .job-status-message.success {
   color: var(--color-success);
 }
+/* Стили для печатного шаблона */
+#printable-pallet-paper {
+  display: none; /* Скрыто по умолчанию */
+  color: black;
+  background-color: white;
+  font-family: "Arial", sans-serif;
+  text-align: center;
+  padding: 20mm 10mm; /* Отступы для листа A4 */
+}
+
+.print-name {
+  font-size: 80px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+.print-date {
+  font-size: 50px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+.print-job {
+  font-size: 60px;
+  font-weight: bold;
+  margin-bottom: 40px;
+}
+.print-items {
+  font-size: 40px;
+  font-weight: bold;
+  text-align: left;
+  margin-bottom: 40px;
+}
+.print-materials {
+  font-size: 30px;
+  font-weight: bold;
+  text-align: left;
+  position: absolute;
+  bottom: 20mm;
+  left: 10mm;
+  right: 10mm;
+}
+
+/* Правила, которые применяются ТОЛЬКО ПРИ ПЕЧАТИ */
+@media print {
+  /* Сначала скрываем всё, что есть на странице */
+  body > * {
+    display: none !important;
+  }
+
+  /* Затем показываем ТОЛЬКО наш шаблон для печати */
+  #printable-pallet-paper,
+  #printable-pallet-paper * {
+    display: block !important;
+  }
+
+  /* Убираем тени и лишние эффекты для чистого листа */
+  @page {
+    margin: 0;
+    size: A4;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+  }
+}
