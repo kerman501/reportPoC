@@ -1,35 +1,25 @@
-// js/main.js - ИСПРАВЛЕННАЯ И ОБЪЕДИНЕННАЯ ВЕРСИЯ
+// js/main.js - ФИНАЛЬНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
 
 // ===================================================================
-// ===== НОВЫЙ БЛОК ЛОГИКИ ДЛЯ СВЯЗИ С БЭКЕНДОМ (ИЗ НОВОЙ ВЕРСИИ) ====
+// ===== БЛОК ЛОГИКИ ДЛЯ СВЯЗИ С БЭКЕНДОМ (С УЛУЧШЕННОЙ ОТЛАДКОЙ) ====
 // ===================================================================
 
-// --- Глобальные переменные для бэкенда ---
 let todaysJobs = [];
 let debounceTimer;
-const DEBOUNCE_DELAY = 10000; // 10 секунд
+const DEBOUNCE_DELAY = 10000;
 let lastFetchTime = 0;
-const RATE_LIMIT_MS = 60000; // 1 минута
+const RATE_LIMIT_MS = 60000;
 
-/**
- * Инициализирует основную логику приложения: загружает работы из localStorage
- * и устанавливает слушатель на поле ввода номера работы с задержкой (debounce).
- */
 function initializeAppLogic() {
   loadJobsFromLocalStorage();
   const jobInput = document.getElementById("job");
   const debounceIndicator = document.getElementById("debounce-indicator");
-
   if (jobInput && debounceIndicator) {
     jobInput.addEventListener("input", (e) => {
       const jobId = e.target.value.trim();
       clearTimeout(debounceTimer);
-
-      // Сброс анимации индикатора
       debounceIndicator.style.transition = "none";
       debounceIndicator.classList.remove("active");
-
-      // Используем requestAnimationFrame для плавного рестарта анимации
       requestAnimationFrame(() => {
         debounceIndicator.style.transition = `width ${
           DEBOUNCE_DELAY / 1000
@@ -49,29 +39,17 @@ function initializeAppLogic() {
   }
 }
 
-/**
- * Находит работу: сначала локально, потом на сервере.
- * @param {string} jobId - Номер работы для поиска.
- * @param {object} options - Опции (clearFieldsOnFail, showMessages).
- * @returns {Promise<boolean>} - true, если работа найдена.
- */
 async function findAndPopulateJob(jobId, options = {}) {
   const { clearFieldsOnFail = false, showMessages = false } = options;
-
   if (clearFieldsOnFail) {
-    // Предварительно очищаем поля, чтобы не было старых данных
     populateFormWithJobData(null, jobId);
   }
-
-  // 1. Поиск в локальном кэше
   const foundJob = todaysJobs.find((job) => job.leadid === jobId);
   if (foundJob) {
     if (showMessages) showStatusMessage("Job found locally.", "success");
     populateFormWithJobData(foundJob);
     return true;
   }
-
-  // 2. Проверка ограничения на частоту запросов к серверу
   const now = Date.now();
   if (now - lastFetchTime < RATE_LIMIT_MS) {
     const remaining = Math.round(
@@ -85,20 +63,29 @@ async function findAndPopulateJob(jobId, options = {}) {
     return false;
   }
   lastFetchTime = now;
-
-  // 3. Запрос на сервер
   if (showMessages) showStatusMessage("Searching on server...", false);
   const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`;
   try {
     const response = await fetch(apiUrl);
+    // *** УЛУЧШЕННАЯ ОБРАБОТКА ОШИБОК ***
+    if (!response.ok) {
+      const errorText = await response.text(); // Читаем ответ как текст
+      try {
+        // Пытаемся парсить как JSON, если это возможно
+        const jsonData = JSON.parse(errorText);
+        throw new Error(jsonData.error || `Server error: ${response.status}`);
+      } catch (e) {
+        // Если парсинг не удался, значит пришел HTML. Показываем его в консоли.
+        console.error("Server returned non-JSON response:", errorText);
+        throw new Error(
+          `Server error: ${response.status}. Check console for HTML response.`
+        );
+      }
+    }
     const jsonData = await response.json();
-    if (!response.ok)
-      throw new Error(jsonData.error || `Network error: ${response.status}`);
-
     todaysJobs = jsonData.data;
     saveJobsToLocalStorage(todaysJobs);
     renderJobsList(todaysJobs);
-
     const currentJob = todaysJobs.find((job) => job.leadid === jobId);
     if (currentJob) {
       if (showMessages)
@@ -113,23 +100,17 @@ async function findAndPopulateJob(jobId, options = {}) {
     console.error("Ошибка при загрузке работ с сервера:", error);
     if (showMessages) showStatusMessage(error.message, true);
   }
-
-  // 4. Если ничего не найдено
   if (clearFieldsOnFail) {
     populateFormWithJobData(null, jobId);
   }
   return false;
 }
 
-/**
- * Отображает список работ в виде кнопок.
- * @param {Array} jobs - Массив объектов работ.
- */
+// ... остальные функции из этого блока (renderJobsList, populateFormWithJobData и т.д.) без изменений ...
 function renderJobsList(jobs) {
   const container = document.getElementById("jobs-list-container");
   if (!container) return;
-  container.innerHTML = ""; // Очищаем контейнер
-
+  container.innerHTML = "";
   if (jobs && jobs.length > 0) {
     jobs.forEach((job) => {
       const jobButton = document.createElement("button");
@@ -143,44 +124,30 @@ function renderJobsList(jobs) {
   }
 }
 
-/**
- * Заполняет ключевые поля формы данными из объекта работы.
- * @param {object|null} job - Объект работы или null для очистки.
- * @param {string|null} currentJobId - Текущий номер работы для сохранения в поле.
- */
 function populateFormWithJobData(job, currentJobId = null) {
   const clientNameInput = document.getElementById("clientName");
   const cuFtInput = document.getElementById("cuFt");
   const jobInput = document.getElementById("job");
 
   if (job) {
-    // Используем || "" на случай, если данные с бэка придут null
     clientNameInput.value = job.customerfullname || "";
     jobInput.value = job.leadid || "";
     cuFtInput.value = job.inventoryvolumecuft || "";
   } else {
-    // Очистка полей
     clientNameInput.value = "";
     cuFtInput.value = "";
-    // Если передали currentJobId, оставляем его в поле, чтобы пользователь видел, что искал
     if (currentJobId) {
       jobInput.value = currentJobId;
     }
   }
-  // После любого изменения данных нужно обновить зависимые элементы
   updatePalletPaperDisplay();
 }
 
-/**
- * Показывает статусное сообщение под полем "Job number".
- * @param {string} message - Текст сообщения.
- * @param {boolean|string} type - 'error' (или true), 'success' (или false).
- */
 function showStatusMessage(message, type) {
   const statusEl = document.getElementById("job-status-message");
   if (!statusEl) return;
   statusEl.textContent = message;
-  statusEl.className = "job-status-message"; // Сброс классов
+  statusEl.className = "job-status-message";
   if (type === true || type === "error") {
     statusEl.classList.add("error");
   } else if (type === false || type === "success") {
@@ -212,23 +179,15 @@ function loadJobsFromLocalStorage() {
   }
 }
 
-// --- КОНЕЦ НОВОГО БЛОКА ЛОГИКИ ---
-
-// ===================================================================
-// ===== СТАРЫЙ КОД ИНИЦИАЛИЗАЦИИ И СЛУШАТЕЛЕЙ (ВОССТАНОВЛЕН) ========
-// ===================================================================
-
+// --- Точка входа приложения ---
 document.addEventListener("DOMContentLoaded", () => {
-  // === ДОБАВЛЕН ВЫЗОВ ИНИЦИАЛИЗАЦИИ НОВОЙ ЛОГИКИ ===
   initializeAppLogic();
 
-  // Initial UI setup (старый код)
   applyCurrentTheme();
   setupThemeToggle();
   createQuestionFields();
   initializePdfJsWorker();
 
-  // Populate form: Defaults -> Saved State -> URL Params (старый код)
   populateInitialFormValues();
   const savedState = loadFormState();
   if (savedState) {
@@ -236,7 +195,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   processUrlParameters();
 
-  // Initialize handlers and listeners (старый код)
   initializePhotoHandling();
   setupFormEventListeners();
 
@@ -244,14 +202,26 @@ document.addEventListener("DOMContentLoaded", () => {
     setupQrScanner();
   }
 
-  // Final UI updates on load (старый код)
   updateSheetOutputString();
   generateSheetFormula();
   updateWarehouseHighlight();
   updatePalletPaperDisplay();
 
-  // === ВОССТАНОВЛЕНЫ ВСЕ СЛУШАТЕЛИ КНОПОК ===
+  // *** ВОЗВРАЩАЕМ КОД ДЛЯ ИКОНКИ КНОПКИ ***
+  const reportButtonIcon = document.getElementById("reportButtonIcon");
+  if (reportButtonIcon) {
+    const iconImagePreloader = new Image();
+    iconImagePreloader.onload = function () {
+      reportButtonIcon.src = "assets/logo.png";
+      reportButtonIcon.style.display = "inline";
+    };
+    iconImagePreloader.onerror = function () {
+      reportButtonIcon.style.display = "none";
+    };
+    iconImagePreloader.src = "assets/logo.png";
+  }
 
+  // --- ВОССТАНОВЛЕННЫЕ ГЛОБАЛЬНЫЕ СЛУШАТЕЛИ КНОПОК ---
   document
     .getElementById("clearReportBtn")
     ?.addEventListener("click", clearReportData);
@@ -286,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("pdfFile")
     ?.addEventListener("change", handlePdfFileChange);
 
-  // Этот слушатель уже есть в новой версии pdfHandler.js, но на всякий случай оставляем
   document
     .getElementById("viewPdfBtn")
     ?.addEventListener(
@@ -347,7 +316,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// --- Оригинальная функция очистки (она была и в старой, и в новой версии) ---
 function clearReportData() {
   if (
     !confirm(
@@ -357,26 +325,17 @@ function clearReportData() {
     return;
   }
 
-  // 1. Очищаем localStorage, кроме сохраняемых полей
   if (typeof clearPartialFormState === "function") clearPartialFormState();
-
-  // 2. Очищаем визуальные данные
   if (typeof clearPhotoData === "function") clearPhotoData();
   if (typeof clearPdfData === "function") clearPdfData();
   if (typeof resetUIForClearReport === "function") resetUIForClearReport();
-
-  // 3. Сбрасываем поля формы к значениям по умолчанию
   if (typeof resetFormFields === "function") resetFormFields();
-
-  // 4. Возвращаем сохраненные значения (имя, склад и т.д.)
   const preservedState =
     typeof loadFormState === "function" ? loadFormState() : null;
   if (preservedState) {
     if (typeof applyStateToFields === "function")
       applyStateToFields(preservedState);
   }
-
-  // 5. Обновляем производные UI компоненты
   if (typeof updateSheetOutputString === "function") updateSheetOutputString();
   if (typeof generateSheetFormula === "function") generateSheetFormula();
   if (typeof updatePalletPaperDisplay === "function")

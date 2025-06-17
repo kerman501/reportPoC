@@ -308,15 +308,18 @@ function setupFormEventListeners() {
         element.type === "radio"
           ? "change"
           : "input";
+
+      // *** ИСПРАВЛЕННАЯ ЛОГИКА ***
+      // Мы убрали некорректное условие if (element.dataset.status !== "pdf-informed")
+      // Теперь любое изменение пользователем будет корректно перекрашивать поле в синий.
       element.addEventListener(eventType, () => {
-        if (element.dataset.status !== "pdf-informed") {
-          setFieldStatus(element, "user-modified");
-        }
-        triggerStateSave();
+        setFieldStatus(element, "user-modified"); // Всегда устанавливаем синий статус при вводе
+        triggerStateSave(); // Сохраняем состояние
       });
     }
   });
 
+  // Остальные слушатели остаются без изменений
   sheetDataInputIds.forEach((id) => {
     const element = document.getElementById(id);
     if (element) {

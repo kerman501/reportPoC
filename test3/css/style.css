@@ -1134,7 +1134,7 @@ label[for="job"] .icon-button {
 .debounce-indicator {
   height: 3px;
   width: 0%;
-  background-color: var(--accent-color);
+  background-color: var(--company-pink);
   border-radius: 2px;
   /* Используем transition вместо animation - это надежнее */
   transition: width 10s linear;

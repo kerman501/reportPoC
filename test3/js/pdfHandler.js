@@ -141,10 +141,15 @@ async function handlePdfFileChange(e) {
     }
 
     let pdfClientName = "";
-    const shipperNameRegex = /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])/i;
+    // Возвращаем старое, более точное регулярное выражение с "заглядыванием вперед"
+    const shipperNameRegex =
+      /(?:S|H)IPPER\s*([A-Za-z][A-Za-z\s'-]*[A-Za-z])(?=\s*(?:Shipment Number|PIECE OF CAKE|USDOT|\d{2}\/\d{2}\/\d{4}|Origin Loading Address))/i;
     let nameMatch = rawText.match(shipperNameRegex);
+
     if (nameMatch && nameMatch[1]) {
+      // Очищаем и форматируем имя
       pdfClientName = nameMatch[1]
+        .replace(/[\n\r]+/g, " ")
         .trim()
         .split(/\s+/)
         .map((p) => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
