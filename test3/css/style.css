@@ -1161,74 +1161,12 @@ label[for="job"] .icon-button {
 }
 /* --- Стили для печатного шаблона --- */
 #printable-pallet-paper {
-  display: none; /* По умолчанию скрыто */
-  color: black;
-  background-color: white;
-  font-family: Arial, sans-serif;
-
-  /* Основной контейнер, который имитирует лист */
-  display: flex;
-  flex-direction: column;
-  width: 190mm; /* Ширина контента на листе A4 */
-  height: 277mm; /* Высота контента на листе A4 */
-  border: 1.5px solid black; /* Рамка вокруг всего */
-}
-
-/* Эта обертка растягивается, чтобы занять все свободное место */
-#print-main-content {
-  flex-grow: 1; /* Заставляет этот блок занять все доступное пространство */
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-  padding: 10mm; /* Внутренние отступы */
-}
-
-#printable-pallet-paper > div {
-  font-weight: bold;
-}
-
-/* --- Скорректированные размеры и отступы --- */
-.print-name {
-  font-size: 80pt; /* Уменьшено */
-  border-bottom: 1.5px solid black;
-  min-height: 90mm; /* Резервируем место для имени */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding-bottom: 5mm;
-}
-.print-date {
-  font-size: 65pt; /* Уменьшено */
-  border-bottom: 1.5px solid black;
-  padding-top: 5mm;
-  padding-bottom: 5mm;
-}
-.print-job {
-  font-size: 65pt; /* Уменьшено */
-  padding-top: 5mm;
-  padding-bottom: 5mm;
-}
-.print-items-line {
-  font-size: 50pt; /* Уменьшено */
-  text-align: left; /* Выравнивание по левому краю, как на макете */
-  padding-left: 10mm;
-  line-height: 1.3;
-}
-
-/* Блок с материалами */
-.print-materials {
-  display: flex;
-  justify-content: space-between;
-  padding: 5mm 10mm; /* Отступы сверху/снизу и по бокам */
-}
-.print-materials span {
-  font-size: 18pt; /* Уменьшено */
-  font-weight: bold;
+  display: none;
 }
 
 /* --- Правила, которые применяются ТОЛЬКО ПРИ ПЕЧАТИ --- */
 @media print {
-  /* Центрируем наш лист на странице печати */
+  /* 1. Настраиваем страницу печати: центрируем наш лист */
   body {
     display: flex;
     justify-content: center;
@@ -1237,16 +1175,69 @@ label[for="job"] .icon-button {
     margin: 0;
   }
 
-  /* Скрываем все лишнее, КРОМЕ нашего шаблона */
+  /* 2. Скрываем все лишнее с сайта, КРОМЕ нашего шаблона */
   body > *:not(#printable-pallet-paper) {
     display: none !important;
   }
 
+  /* 3. Показываем и стилизуем наш шаблон для печати */
   #printable-pallet-paper {
-    display: flex !important; /* Показываем наш шаблон */
-    margin-top: 5mm; /* Небольшой отступ от верхнего края */
-    box-shadow: none; /* Убираем тени при печати */
+    display: flex !important;
+    flex-direction: column;
+    width: 190mm;
+    height: 277mm;
     border: 1.5px solid black;
+    margin-top: 5mm;
+    box-shadow: none;
+    color: black;
+    background-color: white;
+    font-family: Arial, sans-serif;
+  }
+
+  /* 4. Стили для дочерних элементов (они будут видны только при печати) */
+  #print-main-content {
+    display: flex !important;
+    flex-direction: column;
+    flex-grow: 1;
+    text-align: center;
+    padding: 10mm;
+    font-weight: bold;
+  }
+  .print-name {
+    font-size: 80pt;
+    border-bottom: 1.5px solid black;
+    min-height: 90mm;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 5mm;
+  }
+  .print-date {
+    font-size: 65pt;
+    border-bottom: 1.5px solid black;
+    padding-top: 5mm;
+    padding-bottom: 5mm;
+  }
+  .print-job {
+    font-size: 65pt;
+    padding-top: 5mm;
+    padding-bottom: 5mm;
+  }
+  .print-items-line {
+    font-size: 50pt;
+    text-align: left;
+    padding-left: 10mm;
+    line-height: 1.3;
+  }
+  .print-materials {
+    display: flex !important;
+    justify-content: space-between;
+    padding: 5mm 10mm;
+    font-weight: bold;
+  }
+  .print-materials span {
+    font-size: 18pt;
+    font-weight: bold;
   }
 
   @page {
