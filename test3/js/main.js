@@ -1,4 +1,4 @@
-// js/main.js - Финальная, очищенная версия
+// js/main.js - Финальная, исправленная версия
 
 // --- Глобальные переменные ---
 let todaysJobs = [];
@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Инициализируем нашу новую логику (загрузка из localStorage, слушатель на ввод)
   initializeAppLogic();
 
-  // Весь твой остальной код инициализации, который мы не трогаем
+  // Весь твой остальной код инициализации
   applyCurrentTheme();
   setupThemeToggle();
   createQuestionFields();
@@ -25,9 +25,11 @@ document.addEventListener("DOMContentLoaded", () => {
   processUrlParameters();
   initializePhotoHandling();
   setupFormEventListeners();
+
   if (typeof setupQrScanner === "function") {
     setupQrScanner();
   }
+
   updateSheetOutputString();
   generateSheetFormula();
   updateWarehouseHighlight();
@@ -40,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("pdfFile")
     ?.addEventListener("change", handlePdfFileChange);
-  // ... и другие твои слушатели ...
+  // ... и все остальные твои оригинальные слушатели, если они тут были ...
 });
 
 // ===================================================================
@@ -49,18 +51,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function initializeAppLogic() {
   loadJobsFromLocalStorage();
-
   const jobInput = document.getElementById("job");
   const debounceIndicator = document.getElementById("debounce-indicator");
-
   if (jobInput && debounceIndicator) {
     jobInput.addEventListener("input", (e) => {
       const jobId = e.target.value.trim();
-
       clearTimeout(debounceTimer);
       debounceIndicator.style.transition = "none";
       debounceIndicator.classList.remove("active");
-
       requestAnimationFrame(() => {
         debounceIndicator.style.transition = `width ${
           DEBOUNCE_DELAY / 1000
@@ -80,27 +78,17 @@ function initializeAppLogic() {
   }
 }
 
-/**
- * Главная функция поиска данных о работе. Ищет локально, затем на сервере.
- * @param {string} jobId - Номер работы для поиска.
- * @param {object} options - Опции поведения.
- * @returns {Promise<boolean>} - Возвращает true, если работа найдена, иначе false.
- */
 async function findAndPopulateJob(jobId, options = {}) {
   const { clearFieldsOnFail = false, showMessages = false } = options;
-
   if (clearFieldsOnFail) {
-    populateFormWithJobData(null, jobId); // Очищаем поля, но оставляем jobId
+    populateFormWithJobData(null, jobId);
   }
-
   const foundJob = todaysJobs.find((job) => job.leadid === jobId);
-
   if (foundJob) {
     if (showMessages) showStatusMessage("Job found locally.", false);
     populateFormWithJobData(foundJob);
-    return true; // Нашли локально
+    return true;
   }
-
   const now = Date.now();
   if (now - lastFetchTime < RATE_LIMIT_MS) {
     const remaining = Math.round(
@@ -113,40 +101,33 @@ async function findAndPopulateJob(jobId, options = {}) {
       );
     return false;
   }
-
   lastFetchTime = now;
   if (showMessages) showStatusMessage("Searching on server...", false);
-  const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`; // <-- НЕ ЗАБУДЬ ПРОВЕРИТЬ URL
-
+  const apiUrl = `https://backend-test-pi-three.vercel.app/api/get-daily-jobs?jobId=${jobId}`;
   try {
     const response = await fetch(apiUrl);
     const jsonData = await response.json();
     if (!response.ok)
       throw new Error(jsonData.error || `Network error: ${response.status}`);
-
     todaysJobs = jsonData.data;
     saveJobsToLocalStorage(todaysJobs);
     renderJobsList(todaysJobs);
-
     const currentJob = todaysJobs.find((job) => job.leadid === jobId);
     if (currentJob) {
       if (showMessages)
         showStatusMessage("Jobs list updated from server.", false);
       populateFormWithJobData(currentJob);
-      return true; // Нашли на сервере
+      return true;
     }
   } catch (error) {
     console.error("Ошибка при загрузке работ с сервера:", error);
     if (showMessages) showStatusMessage(error.message, true);
   }
-
   if (clearFieldsOnFail) {
     populateFormWithJobData(null, jobId);
   }
-  return false; // Не нашли
+  return false;
 }
-
-// --- Вспомогательные функции, которые мы не трогаем ---
 
 function renderJobsList(jobs) {
   const container = document.getElementById("jobs-list-container");
@@ -169,7 +150,6 @@ function populateFormWithJobData(job, currentJobId = null) {
   const clientNameInput = document.getElementById("clientName");
   const cuFtInput = document.getElementById("cuFt");
   const jobInput = document.getElementById("job");
-
   if (job) {
     clientNameInput.value = job.customerfullname || "";
     jobInput.value = job.leadid || "";
@@ -211,4 +191,34 @@ function loadJobsFromLocalStorage() {
       localStorage.removeItem("dailyJobsData");
     }
   }
+}
+
+// --- ТВОЯ ОРИГИНАЛЬНАЯ ФУНКЦИЯ, ВОЗВРАЩЕННАЯ НА МЕСТО ---
+function clearReportData() {
+  if (
+    !confirm(
+      "Are you sure you want to clear report data? This will reset all fields except for Employee Name, Warehouse, and Spreadsheet ID."
+    )
+  ) {
+    return;
+  }
+  // 1. Clear data from localStorage, except for preserved fields
+  clearPartialFormState();
+  // 2. Clear visual data from the page
+  clearPhotoData();
+  clearPdfData();
+  resetUIForClearReport();
+  // 3. Reset form fields to their defaults (respecting exclusions)
+  resetFormFields();
+  // 4. Re-apply any preserved values that might have been visually cleared by reset
+  const preservedState = loadFormState();
+  if (preservedState) {
+    applyStateToFields(preservedState);
+  }
+  // 5. Update derived UI components
+  updateSheetOutputString();
+  generateSheetFormula();
+  updatePalletPaperDisplay();
+  updateWarehouseHighlight();
+  alert("Report data has been cleared.");
 }
