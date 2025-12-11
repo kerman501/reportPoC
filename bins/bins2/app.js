@@ -154,9 +154,22 @@ document.addEventListener("DOMContentLoaded", () => {
     userList: document.getElementById("user-list"),
   };
 
+  const GOOGLE_SCRIPT_URL =
+    "https://script.google.com/macros/s/AKfycbwB1v7RppIG_OUM0k8mqdRxfiFNnBUO2wQ8IAYoFsj1-gbXShhMLL-esaneZJXShirKbQ/exec";
+  // Пока хардкодим локацию, потом вынесем в интерфейс
+  // Можно менять на "Bronx" или "Brooklyn" для теста
+  const CURRENT_LOCATION = "Main";
+
+  let syncTimeout; // Для задержки отправки (debounce)
   // --- CORE FUNCTIONS ---
-  const saveState = () =>
+  const saveState = () => {
     localStorage.setItem("binTrackerState", JSON.stringify(state));
+
+    // Автоматическая отправка с задержкой 2 секунды
+    // (чтобы если пользователь быстро что-то правит, мы не спамили запросами)
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(sendDataToGoogle, 2000);
+  };
 
   const loadState = () => {
     const savedState = localStorage.getItem("binTrackerState");
@@ -171,6 +184,42 @@ document.addEventListener("DOMContentLoaded", () => {
       saveState();
     }
   };
+
+  function sendDataToGoogle() {
+    // Если URL не настроен, не пытаемся отправлять
+    if (
+      !GOOGLE_SCRIPT_URL ||
+      GOOGLE_SCRIPT_URL.includes(
+        "https://script.google.com/macros/s/AKfycbwB1v7RppIG_OUM0k8mqdRxfiFNnBUO2wQ8IAYoFsj1-gbXShhMLL-esaneZJXShirKbQ/exec"
+      )
+    )
+      return;
+
+    // Снимаем данные
+    const payload = {
+      location: CURRENT_LOCATION,
+      stock: state.stock,
+      transactions: state.transactions,
+      // Можно добавить еще инфы, если надо
+    };
+
+    // Отправляем
+    // Используем 'no-cors', так как Google Script не всегда отдает корректные заголовки,
+    // но данные при этом доходят.
+    fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+      .then(() => {
+        console.log("Data sent to Google Sheets");
+        // Тут можно добавить индикатор "Сохранено в облако"
+      })
+      .catch((err) => console.error("Error sending to Google:", err));
+  }
 
   const updateStockDisplay = () => {
     document.getElementById("clean-stock-count").textContent =
