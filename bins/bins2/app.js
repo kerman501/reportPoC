@@ -146,27 +146,25 @@ document.addEventListener("DOMContentLoaded", () => {
     appContainer: document.querySelector(".app-container"),
     loginModal: document.getElementById("login-modal"),
     adminModal: document.getElementById("admin-modal"),
-    userGrid: document.getElementById("user-login-grid"), // New
+    userGrid: document.getElementById("user-login-grid"),
     transactionsContainer: document.getElementById("transactions-container"),
     reportDateInput: document.getElementById("report-date"),
     userInfo: document.getElementById("user-info"),
     currentUserName: document.getElementById("current-user-name"),
     userList: document.getElementById("user-list"),
+    qrModal: document.getElementById("qr-modal"), // NEW
   };
 
+  // Вставь сюда свой URL скрипта
   const GOOGLE_SCRIPT_URL =
     "https://script.google.com/macros/s/AKfycbwB1v7RppIG_OUM0k8mqdRxfiFNnBUO2wQ8IAYoFsj1-gbXShhMLL-esaneZJXShirKbQ/exec";
-  // Пока хардкодим локацию, потом вынесем в интерфейс
-  // Можно менять на "Bronx" или "Brooklyn" для теста
   const CURRENT_LOCATION = "Main";
+  let syncTimeout;
+  let html5QrCode; // NEW: переменная для сканера
 
-  let syncTimeout; // Для задержки отправки (debounce)
   // --- CORE FUNCTIONS ---
   const saveState = () => {
     localStorage.setItem("binTrackerState", JSON.stringify(state));
-
-    // Автоматическая отправка с задержкой 2 секунды
-    // (чтобы если пользователь быстро что-то правит, мы не спамили запросами)
     clearTimeout(syncTimeout);
     syncTimeout = setTimeout(sendDataToGoogle, 2000);
   };
@@ -178,7 +176,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!state.users) state.users = [];
       if (!state.foremen) state.foremen = [];
     }
-    // Default admin if empty
     if (state.users.length === 0) {
       state.users.push({ id: Date.now(), name: "Admin", pin: "0000" });
       saveState();
@@ -186,31 +183,20 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function sendDataToGoogle() {
-    // 1. Убрали проверку, которая блокировала отправку
-    console.log("Попытка отправки данных в Google..."); // Добавил лог, чтобы видеть в консоли
-
+    console.log("Sending data to Google...");
     const payload = {
       location: CURRENT_LOCATION,
       stock: state.stock,
       transactions: state.transactions,
     };
 
-    // 2. Отправляем
-    // Важно: Google Script капризный к заголовкам CORS.
-    // Мы используем 'no-cors' и отправляем данные как текст.
     fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
-      headers: {
-        "Content-Type": "text/plain;charset=utf-8", // Меняем на text/plain, это надежнее для Google
-      },
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify(payload),
     })
-      .then(() => {
-        console.log(
-          "Данные улетели! (Ответа не увидим из-за no-cors, но это норма)"
-        );
-      })
+      .then(() => console.log("Sent successfully (no-cors)"))
       .catch((err) => console.error("Error sending to Google:", err));
   }
 
@@ -355,6 +341,16 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.style.display = "none";
     const form = modal.querySelector(".modal-content");
     if (form) clearValidation(form);
+
+    // NEW: Stop camera if closing QR modal
+    if (modal.id === "qr-modal" && html5QrCode && html5QrCode.isScanning) {
+      html5QrCode
+        .stop()
+        .then(() => {
+          console.log("Camera stopped");
+        })
+        .catch((err) => console.error(err));
+    }
   };
 
   function validateForm(formElement) {
@@ -391,6 +387,81 @@ document.addEventListener("DOMContentLoaded", () => {
         closeModal(e.target.closest(".modal"))
       )
     );
+
+  // NEW: QR SCANNING LOGIC
+  document.getElementById("scan-qr-btn").addEventListener("click", () => {
+    openModal(ui.qrModal);
+
+    // Init scanner if not already
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    html5QrCode
+      .start(
+        { facingMode: "environment" },
+        config,
+        (decodedText) => {
+          // SUCCESS CALLBACK
+          try {
+            // Stop camera
+            html5QrCode.stop().then(() => closeModal(ui.qrModal));
+
+            // Parse Data: {"f":"Name","j":"123","t":"TR","in":50,"out":0}
+            const data = JSON.parse(decodedText);
+
+            // Open Entry Modal
+            const entryModal = document.getElementById("entry-modal");
+            entryModal.querySelector("h2").textContent = T("newEntryTitle");
+            entryModal.dataset.editingId = "";
+
+            // Populate Fields
+            document.getElementById("foreman-name").value = data.f || "";
+            document.getElementById("job-number").value = data.j || "";
+
+            // Truck Number Logic (000 or empty -> require manual input)
+            const truckField = document.getElementById("truck-number");
+            if (!data.t || data.t === "000") {
+              truckField.value = "";
+              setTimeout(() => truckField.focus(), 500); // Focus for user input
+            } else {
+              truckField.value = data.t;
+            }
+
+            // Set Bins
+            entryModal.querySelector(
+              '[data-type="dirtyIn"] .bin-count-display'
+            ).textContent = data.in || 0;
+            entryModal.querySelector(
+              '[data-type="cleanOut"] .bin-count-display'
+            ).textContent = data.out || 0;
+
+            // Update Foremen List
+            const foremenList = document.getElementById("foremen-list");
+            foremenList.innerHTML = "";
+            state.foremen.forEach((name) => {
+              const option = document.createElement("option");
+              option.value = name;
+              foremenList.appendChild(option);
+            });
+
+            openModal(entryModal);
+          } catch (e) {
+            alert("Invalid QR Code format");
+            console.error(e);
+          }
+        },
+        (errorMessage) => {
+          // Scanning... ignore errors per frame
+        }
+      )
+      .catch((err) => {
+        console.error("Camera error", err);
+        alert("Error starting camera. Please allow permissions.");
+      });
+  });
 
   document.querySelectorAll(".bin-counter").forEach((counter) => {
     const span = counter.querySelector(".bin-count-display");
@@ -692,7 +763,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById("admin-panel-btn").addEventListener("click", () => {
-    // Simple security for admin panel
     const pin = prompt("Enter Admin PIN:", "");
     if (pin === "0000") {
       openModal(ui.adminModal);
@@ -710,11 +780,10 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please enter a valid name.");
       return;
     }
-    // Removed PIN requirement, adding default '0000' for data structure consistency
     state.users.push({ id: Date.now(), name, pin: "0000" });
     saveState();
     renderUserList();
-    renderLoginButtons(); // Refresh login screen
+    renderLoginButtons();
     nameInput.value = "";
   });
 
@@ -725,7 +794,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.users = state.users.filter((u) => u.id !== userId);
       saveState();
       renderUserList();
-      renderLoginButtons(); // Refresh login screen
+      renderLoginButtons();
     }
   });
 
@@ -1049,20 +1118,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const initializeApp = () => {
     loadState();
     setLanguage(state.language || "en");
-    renderLoginButtons(); // Prepare login screen
+    renderLoginButtons();
 
     const currentUser = sessionStorage.getItem("currentUser");
     if (currentUser) {
       const user = JSON.parse(currentUser);
       ui.appContainer.classList.remove("hidden");
       ui.loginModal.style.display = "none";
-
       ui.userInfo.classList.remove("hidden");
       ui.currentUserName.textContent = user.name;
       document.getElementById("current-user-greeting").textContent = T(
         "currentUserGreeting"
       );
-
       ui.reportDateInput.valueAsDate = new Date();
       updateStockDisplay();
       renderTransactions();

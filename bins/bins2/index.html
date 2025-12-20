@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bin Tracker 3.0</title>
+    <title>Bin Tracker 3.1 QR</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -35,6 +35,14 @@
         </section>
 
         <section class="actions-grid">
+          <button
+            id="scan-qr-btn"
+            class="action-button"
+            style="background-color: #6f42c1"
+          >
+            <span>📷 Scan QR</span>
+          </button>
+
           <button id="add-entry-btn" class="action-button">
             <span data-key="addEntry">🚚 Add Truck Entry</span>
           </button>
@@ -83,11 +91,23 @@
       </main>
     </div>
 
+    <div id="qr-modal" class="modal">
+      <div class="modal-content" style="max-width: 500px; padding: 10px">
+        <h2>Scanning...</h2>
+        <div id="reader" style="width: 100%"></div>
+        <button
+          class="cancel-btn action-button"
+          style="margin-top: 15px; background-color: var(--secondary-color)"
+        >
+          Close Camera
+        </button>
+      </div>
+    </div>
+
     <div id="login-modal" class="modal" style="display: flex">
       <div class="modal-content">
         <h2 data-key="selectUser">Select User</h2>
         <div id="user-login-grid" class="user-grid"></div>
-
         <button id="admin-panel-btn" data-key="adminPanel">
           Administration
         </button>
@@ -341,6 +361,10 @@
       </div>
     </div>
 
+    <script
+      src="https://unpkg.com/html5-qrcode"
+      type="text/javascript"
+    ></script>
     <script src="app.js"></script>
   </body>
 </html>
