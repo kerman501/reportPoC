@@ -186,37 +186,30 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   function sendDataToGoogle() {
-    // Если URL не настроен, не пытаемся отправлять
-    if (
-      !GOOGLE_SCRIPT_URL ||
-      GOOGLE_SCRIPT_URL.includes(
-        "https://script.google.com/macros/s/AKfycbwB1v7RppIG_OUM0k8mqdRxfiFNnBUO2wQ8IAYoFsj1-gbXShhMLL-esaneZJXShirKbQ/exec"
-      )
-    )
-      return;
+    // 1. Убрали проверку, которая блокировала отправку
+    console.log("Попытка отправки данных в Google..."); // Добавил лог, чтобы видеть в консоли
 
-    // Снимаем данные
     const payload = {
       location: CURRENT_LOCATION,
       stock: state.stock,
       transactions: state.transactions,
-      // Можно добавить еще инфы, если надо
     };
 
-    // Отправляем
-    // Используем 'no-cors', так как Google Script не всегда отдает корректные заголовки,
-    // но данные при этом доходят.
+    // 2. Отправляем
+    // Важно: Google Script капризный к заголовкам CORS.
+    // Мы используем 'no-cors' и отправляем данные как текст.
     fetch(GOOGLE_SCRIPT_URL, {
       method: "POST",
       mode: "no-cors",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": "text/plain;charset=utf-8", // Меняем на text/plain, это надежнее для Google
       },
       body: JSON.stringify(payload),
     })
       .then(() => {
-        console.log("Data sent to Google Sheets");
-        // Тут можно добавить индикатор "Сохранено в облако"
+        console.log(
+          "Данные улетели! (Ответа не увидим из-за no-cors, но это норма)"
+        );
       })
       .catch((err) => console.error("Error sending to Google:", err));
   }
