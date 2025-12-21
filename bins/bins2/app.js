@@ -882,6 +882,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert(T("noDataForDate"));
       return;
     }
+
     const totalReceived = transactionsForDate
       .filter((t) => t.type === "truck")
       .reduce((sum, t) => sum + (t.dirtyIn || 0), 0);
@@ -900,16 +901,192 @@ document.addEventListener("DOMContentLoaded", () => {
     }, {});
     const endOfDayClean = state.stock.clean;
     const endOfDayDirty = state.stock.dirty;
-    // ... HTML GENERATION (Same as previous step) ...
-    // Чтобы не дублировать огромный кусок HTML снова,
-    // просто вставь сюда тот код генерации отчета, который был выше.
-    // Если ты скопируешь этот код без HTML генерации, ручной отчет перестанет открываться.
-    // Но автоматический (в Гугл) будет работать.
 
-    // Я добавлю минимальный алерт, чтобы код был валиден, если ты забудешь вставить HTML
-    alert(
-      "Report generated. (HTML template logic hidden for brevity - restore from previous version if needed for manual view)"
+    const transactionRowsHtml = transactionsForDate
+      .map((t, index) => {
+        const d = new Date(t.timestamp);
+        const date = d.toLocaleDateString("en-CA");
+        const time = d.toLocaleTimeString([], {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const rowStyle =
+          index % 2 === 0
+            ? "background-color: #ffffff;"
+            : "background-color: #f3f5f7;";
+
+        let typeCell = "",
+          dirtyInCell = "0",
+          cleanOutCell = "0",
+          qtyCell = "",
+          commentCell = "",
+          jobNumberCell = "",
+          truckCell = "",
+          foremanCell = "";
+
+        switch (t.type) {
+          case "truck":
+            typeCell =
+              '<span style="display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; color: white; background-color: #3498db;">truck</span>';
+            dirtyInCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px; color: #e74c3c; font-weight: 600;">${
+              t.dirtyIn || 0
+            }</td>`;
+            cleanOutCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px; color: #27ae60; font-weight: 600;">${
+              t.cleanOut || 0
+            }</td>`;
+            qtyCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            commentCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            jobNumberCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.jobNumber || ""
+            }</td>`;
+            truckCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.truckNumber || ""
+            }</td>`;
+            foremanCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.foreman || ""
+            }</td>`;
+            break;
+          case "wash":
+            typeCell =
+              '<span style="display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; color: white; background-color: #2ecc71;">wash</span>';
+            dirtyInCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            cleanOutCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            qtyCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${t.quantity}</td>`;
+            commentCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.comment || ""
+            }</td>`;
+            jobNumberCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            truckCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            foremanCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            break;
+          case "adjust":
+            typeCell =
+              '<span style="display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; color: white; background-color: #f39c12;">adjust</span>';
+            dirtyInCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            cleanOutCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            qtyCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            commentCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.reason || ""
+            }</td>`;
+            jobNumberCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            truckCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            foremanCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            break;
+        }
+        return `<tr style="${rowStyle}">
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${date}</td>
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${time}</td>
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${typeCell}</td>
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+                      t.user || ""
+                    }</td>
+                    ${foremanCell} ${jobNumberCell} ${truckCell} ${dirtyInCell} ${cleanOutCell} ${qtyCell} ${commentCell}
+                </tr>`;
+      })
+      .join("");
+
+    const sortedActivity = Object.entries(activityByUser).sort((a, b) =>
+      a[0].localeCompare(b[0])
     );
+    const washingEntries = Object.entries(washedByPerson);
+    const maxRows = Math.max(washingEntries.length, sortedActivity.length, 2);
+    let summaryTableBodyHtml = "";
+
+    for (let i = 0; i < maxRows; i++) {
+      let endOfDayHtml =
+        i === 0
+          ? `<td style="padding: 8px; border-left: 1px solid #dfe2e5; text-align: right; font-weight: bold; color: #27ae60;">${T(
+              "cleanStock"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left; font-weight: bold; font-size: 16px; color: #27ae60;">${endOfDayClean}</td>`
+          : i === 1
+          ? `<td style="padding: 8px; border-left: 1px solid #dfe2e5; text-align: right; font-weight: bold; color: #e74c3c;">${T(
+              "dirtyStock"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left; font-weight: bold; font-size: 16px; color: #e74c3c;">${endOfDayDirty}</td>`
+          : `<td style="padding: 8px; border-left: 1px solid #dfe2e5;"></td><td style="padding: 8px; border-right: 5px solid #34495e;"></td>`;
+      let movementHtml =
+        i === 0
+          ? `<td style="padding: 8px; text-align: right;">${T(
+              "totalReceived"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left;"><b>${totalReceived}</b></td>`
+          : i === 1
+          ? `<td style="padding: 8px; text-align: right;">${T(
+              "totalShipped"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left;"><b>${totalShipped}</b></td>`
+          : `<td style="padding: 8px;"></td><td style="padding: 8px; border-right: 5px solid #34495e;"></td>`;
+      let washingHtml = washingEntries[i]
+        ? `<td style="padding: 8px; text-align: right;">${washingEntries[i][0]}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left;"><b>${washingEntries[i][1]}</b></td>`
+        : `<td style="padding: 8px;"></td><td style="padding: 8px; border-right: 5px solid #34495e;"></td>`;
+      let activityHtml = sortedActivity[i]
+        ? `<td style="padding: 8px; text-align: right;">${sortedActivity[i][0]}:</td><td style="padding: 8px; border-right: 1px solid #dfe2e5; text-align: left;"><b>${sortedActivity[i][1]} op(s)</b></td>`
+        : `<td style="padding: 8px;"></td><td style="padding: 8px; border-right: 1px solid #dfe2e5;"></td>`;
+      summaryTableBodyHtml += `<tr>${endOfDayHtml}${movementHtml}${washingHtml}${activityHtml}</tr>`;
+    }
+
+    const fullHtmlReport = `
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 20px; background-color: #f9f9f9;">
+                <h2 style="font-family: inherit; color: #2c3e50;">Operations Log</h2>
+                <table style="border-collapse: collapse; width: 100%;">
+                    <thead>
+                        <tr style="background-color: #2c3e50; color: #ffffff;">
+                            <th style="width: 100px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">Date</th>
+                            <th style="width: 90px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">Time</th>
+                            <th style="width: 80px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">Type</th>
+                            <th style="width: 120px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "employeeName"
+                            )}</th>
+                            <th style="width: 120px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "foreman"
+                            )}</th>
+                            <th style="width: 120px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "jobNumber"
+                            )}</th>
+                            <th style="width: 100px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "truck"
+                            )}</th>
+                            <th style="width: 80px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "inboundDirty"
+                            )}</th>
+                            <th style="width: 90px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "outboundClean"
+                            )}</th>
+                            <th style="width: 80px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "quantityWashed"
+                            )}</th>
+                            <th style="width: 200px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "comment"
+                            )}</th>
+                        </tr>
+                        </thead>
+                    <tbody>${transactionRowsHtml}</tbody>
+                </table>
+                <br>
+                <h2 style="font-family: inherit; color: #2c3e50;">${T(
+                  "summaryTitle"
+                )}</h2>
+                <table style="border-collapse: collapse; border-spacing: 0;">
+                    <thead>
+                        <tr style="background-color: #34495e; color: #ffffff;">
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; border-right-width: 5px; text-align: center; font-size: 13px;">End-of-Day Totals</th>
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; border-right-width: 5px; text-align: center; font-size: 13px;">${T(
+                              "binMovement"
+                            )}</th>
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; border-right-width: 5px; text-align: center; font-size: 13px;">${T(
+                              "washingSummary"
+                            )}</th>
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; text-align: center; font-size: 13px;">${T(
+                              "activityByUser"
+                            )}</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 14px; background-color: #f3f5f7;">${summaryTableBodyHtml}</tbody>
+                </table>
+            </body>`;
+    document.getElementById("report-html-container").innerHTML = fullHtmlReport;
+    document
+      .getElementById("copy-report-btn")
+      .querySelector("span").textContent = T("copyData");
+    openModal(document.getElementById("report-modal"));
   }
 
   // Backup/Restore... (Same as before)
