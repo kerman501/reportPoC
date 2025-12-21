@@ -11,6 +11,10 @@
       <header class="header">
         <h1 class="header-title" data-key="appTitle">Bin Tracker</h1>
         <div class="header-controls">
+          <div id="sync-status" class="sync-indicator" title="Sync Status">
+            ☁️
+          </div>
+
           <div id="user-info" class="hidden">
             <span id="current-user-greeting"></span>
             <span id="current-user-name"></span>
@@ -125,6 +129,29 @@
           <input type="text" id="new-user-name" required />
         </div>
         <div class="modal-actions">
+          <div
+            class="form-group"
+            style="
+              margin-top: 20px;
+              border-top: 1px solid #ccc;
+              padding-top: 15px;
+            "
+          >
+            <label for="location-select">Warehouse Location</label>
+            <select
+              id="location-select"
+              style="width: 100%; padding: 10px; font-size: 1.1rem"
+            >
+              <option value="Main">Main Warehouse</option>
+              <option value="Bronx">Bronx Hub</option>
+              <option value="Brooklyn">Brooklyn Yard</option>
+              <option value="Queens">Queens Depot</option>
+              <option value="Jersey">Jersey City</option>
+            </select>
+            <p style="font-size: 0.8rem; color: #666">
+              Changes apply immediately.
+            </p>
+          </div>
           <button
             class="cancel-btn action-button"
             style="background-color: var(--secondary-color)"

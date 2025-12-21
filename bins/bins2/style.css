@@ -444,3 +444,33 @@ html {
     justify-content: center;
   }
 }
+.sync-indicator {
+  font-size: 1.5rem;
+  margin-right: 10px;
+  opacity: 0.3; /* По умолчанию бледный - значит все сохранено */
+  transition: opacity 0.3s;
+}
+.sync-indicator.syncing {
+  opacity: 1;
+  animation: pulse 1s infinite;
+}
+.sync-indicator.success {
+  opacity: 1;
+  color: var(--success-color);
+  filter: drop-shadow(0 0 2px green);
+}
+.sync-indicator.error {
+  opacity: 1;
+  color: var(--danger-color);
+}
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
