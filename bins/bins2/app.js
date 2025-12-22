@@ -877,6 +877,7 @@ document.addEventListener("DOMContentLoaded", () => {
     generateReportHtml(transactionsForDate);
   });
 
+  // Вставь это в конец app.js вместо текущей сломанной функции generateReportHtml
   function generateReportHtml(transactionsForDate) {
     if (transactionsForDate.length === 0) {
       alert(T("noDataForDate"));
@@ -986,6 +987,7 @@ document.addEventListener("DOMContentLoaded", () => {
       })
       .join("");
 
+    // Summary
     const sortedActivity = Object.entries(activityByUser).sort((a, b) =>
       a[0].localeCompare(b[0])
     );
