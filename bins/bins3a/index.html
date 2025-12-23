@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bin Tracker 3.1 QR</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="manifest" href="manifest.json" />
+
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Bin Tracker" />
+    <link rel="apple-touch-icon" href="icon.png" />
+  </head>
+  <body>
+    <div class="app-container hidden">
+      <header class="header">
+        <h1 class="header-title" data-key="appTitle">Bin Tracker</h1>
+        <div class="header-controls">
+          <div id="sync-status" class="sync-indicator" title="Sync Status">
+            ☁️
+          </div>
+
+          <div id="user-info" class="hidden">
+            <span id="current-user-greeting"></span>
+            <span id="current-user-name"></span>
+            <button id="logout-btn" data-key="logout">Logout</button>
+          </div>
+          <div class="lang-switcher">
+            <button id="lang-en">🇬🇧</button> <button id="lang-sr">🇷🇸</button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="stock-display">
+          <div class="stock-card">
+            <div class="title" data-key="cleanStock">Clean Bins</div>
+            <div id="clean-stock-count" class="count clean">0</div>
+          </div>
+          <div class="stock-card">
+            <div class="title" data-key="dirtyStock">Dirty Bins</div>
+            <div id="dirty-stock-count" class="count dirty">0</div>
+          </div>
+        </section>
+
+        <section class="actions-grid">
+          <button
+            id="scan-qr-btn"
+            class="action-button"
+            style="background-color: #6f42c1"
+          >
+            <span>📷 Scan QR</span>
+          </button>
+
+          <button id="add-entry-btn" class="action-button">
+            <span data-key="addEntry">🚚 Add Truck Entry</span>
+          </button>
+          <button id="wash-bins-btn" class="action-button">
+            <span data-key="washBins">💧 Wash Bins</span>
+          </button>
+          <button id="adjust-stock-btn" class="action-button">
+            <span data-key="adjustStock">⚙️ Adjust Stock</span>
+          </button>
+        </section>
+
+        <section class="report-section">
+          <label for="report-date" data-key="reportForDate"
+            >Report for date:</label
+          >
+          <div class="date-picker-group">
+            <input type="date" id="report-date" />
+            <button id="report-btn" class="action-button">
+              <span data-key="generateReport">📊 Generate</span>
+            </button>
+          </div>
+        </section>
+
+        <section class="transactions-list">
+          <h3 data-key="todaysTransactions">Today's Transactions</h3>
+          <div id="transactions-container"></div>
+        </section>
+
+        <section class="backup-section">
+          <h3 data-key="backupTitle">Backup & Restore</h3>
+          <div class="actions-grid">
+            <button id="backup-btn" class="action-button">
+              <span data-key="backupBtn">Download Backup</span>
+            </button>
+            <button id="restore-btn" class="action-button">
+              <span data-key="restoreBtn">Restore from File</span>
+            </button>
+            <input
+              type="file"
+              id="restore-file-input"
+              style="display: none"
+              accept=".json"
+            />
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="qr-modal" class="modal">
+      <div class="modal-content" style="max-width: 500px; padding: 10px">
+        <h2>Scanning...</h2>
+        <div id="reader" style="width: 100%"></div>
+        <button
+          class="cancel-btn action-button"
+          style="margin-top: 15px; background-color: var(--secondary-color)"
+        >
+          Close Camera
+        </button>
+      </div>
+    </div>
+
+    <div id="login-modal" class="modal" style="display: flex">
+      <div class="modal-content">
+        <h2 data-key="selectUser">Select User</h2>
+        <div id="user-login-grid" class="user-grid"></div>
+        <button id="admin-panel-btn" data-key="adminPanel">
+          Administration
+        </button>
+      </div>
+    </div>
+
+    <div id="admin-modal" class="modal">
+      <div class="modal-content">
+        <h2 data-key="userManagement">User Management</h2>
+        <h3>Existing Users</h3>
+        <ul id="user-list"></ul>
+        <h3>Add New User</h3>
+        <div class="form-group">
+          <label for="new-user-name" data-key="userName">User Name</label>
+          <input type="text" id="new-user-name" required />
+        </div>
+        <div class="modal-actions">
+          <div
+            class="form-group"
+            style="
+              margin-top: 20px;
+              border-top: 1px solid #ccc;
+              padding-top: 15px;
+            "
+          >
+            <div
+              class="form-group"
+              style="
+                margin-top: 20px;
+                border-top: 1px solid #ccc;
+                padding-top: 15px;
+              "
+            >
+              <label for="location-select">Warehouse Location</label>
+              <select
+                id="location-select"
+                style="width: 100%; padding: 10px; font-size: 1.1rem"
+              >
+                <option value="Maspeth">Maspeth</option>
+                <option value="Ditmars">Ditmars</option>
+                <option value="Ditmars 1">Ditmars 1</option>
+                <option value="Ditmars 2">Ditmars 2</option>
+                <option value="Borden">Borden</option>
+              </select>
+              <p style="font-size: 0.8rem; color: #666"></p>
+            </div>
+            <p style="font-size: 0.8rem; color: #666"></p>
+          </div>
+          <button
+            class="cancel-btn action-button"
+            style="background-color: var(--secondary-color)"
+          >
+            <span data-key="close">Close</span>
+          </button>
+          <button
+            id="add-user-btn"
+            class="action-button"
+            style="background-color: var(--success-color)"
+          >
+            <span data-key="addUser">Add User</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="entry-modal" class="modal">
+      <div class="modal-content" data-editing-id="">
+        <h2 data-key="newEntryTitle">New Truck Entry</h2>
+        <div class="form-group" style="flex: 1">
+          <label for="job-number" data-key="jobNumber">Job Number</label>
+          <input type="text" id="job-number" required />
+          <div class="validation-message" data-key="fieldRequired">
+            This field is required.
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="truck-number" data-key="truckNumber">Truck Number</label>
+          <input type="text" id="truck-number" required />
+          <div class="validation-message" data-key="fieldRequired">
+            This field is required.
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="foreman-name" data-key="foremanName">Foreman Name</label>
+          <input type="text" id="foreman-name" list="foremen-list" required />
+          <datalist id="foremen-list"></datalist>
+          <div class="validation-message" data-key="fieldRequired">
+            This field is required.
+          </div>
+        </div>
+        <div class="truck-ops-container">
+          <div class="truck-op-section inbound">
+            <h3 data-key="inboundDirty">📥 Dirty In</h3>
+            <div class="bin-counter" data-type="dirtyIn">
+              <span class="bin-count-display">0</span>
+              <div class="bin-quick-btn-group">
+                <button class="bin-quick-btn" data-op="add" data-value="25">
+                  +25
+                </button>
+                <button class="bin-quick-btn" data-op="add" data-value="100">
+                  +100
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="truck-op-section outbound">
+            <h3 data-key="outboundClean">📤 Clean Out</h3>
+            <div class="bin-counter" data-type="cleanOut">
+              <span class="bin-count-display">0</span>
+              <div class="bin-quick-btn-group">
+                <button class="bin-quick-btn" data-op="add" data-value="25">
+                  +25
+                </button>
+                <button class="bin-quick-btn" data-op="add" data-value="100">
+                  +100
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="validation-message" id="entry-form-validation"></div>
+        <div class="modal-actions">
+          <button
+            class="cancel-btn action-button"
+            style="background-color: var(--secondary-color)"
+          >
+            <span data-key="cancel">Cancel</span>
+          </button>
+          <button
+            id="save-entry-btn"
+            class="action-button"
+            style="background-color: var(--success-color)"
+          >
+            <span data-key="save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="wash-modal" class="modal">
+      <div class="modal-content" data-editing-id="">
+        <h2 data-key="washBinsTitle">Wash Bins</h2>
+        <div class="form-group">
+          <label data-key="quantityWashed">Quantity Washed</label>
+          <div class="bin-counter" data-type="washQty">
+            <span class="bin-count-display">0</span>
+            <div class="bin-quick-btn-group">
+              <button class="bin-quick-btn" data-op="add" data-value="25">
+                +25
+              </button>
+              <button class="bin-quick-btn" data-op="add" data-value="100">
+                +100
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="wash-comment" data-key="comment">Comment</label>
+          <input type="text" id="wash-comment" />
+        </div>
+        <div class="validation-message" id="wash-form-validation"></div>
+        <div class="modal-actions">
+          <button
+            class="cancel-btn action-button"
+            style="background-color: var(--secondary-color)"
+          >
+            <span data-key="cancel">Cancel</span>
+          </button>
+          <button
+            id="save-wash-btn"
+            class="action-button"
+            style="background-color: var(--success-color)"
+          >
+            <span data-key="save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adjust-modal" class="modal">
+      <div class="modal-content" data-editing-id="">
+        <h2 data-key="adjustStockTitle">Adjust Stock</h2>
+        <div class="form-group">
+          <label for="adjust-clean" data-key="newCleanStock"
+            >New Clean Bins Total</label
+          >
+          <input type="number" id="adjust-clean" required />
+        </div>
+        <div class="form-group">
+          <label for="adjust-dirty" data-key="newDirtyStock"
+            >New Dirty Bins Total</label
+          >
+          <input type="number" id="adjust-dirty" required />
+        </div>
+        <div class="form-group">
+          <label for="adjust-reason" data-key="reasonForAdjustment"
+            >Reason for Adjustment</label
+          >
+          <input type="text" id="adjust-reason" required />
+        </div>
+        <div class="validation-message" id="adjust-form-validation"></div>
+        <div class="modal-actions">
+          <button
+            class="cancel-btn action-button"
+            style="background-color: var(--secondary-color)"
+          >
+            <span data-key="cancel">Cancel</span>
+          </button>
+          <button
+            id="save-adjust-btn"
+            class="action-button"
+            style="background-color: var(--success-color)"
+          >
+            <span data-key="save">Save</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="report-modal" class="modal">
+      <div class="modal-content">
+        <h2 data-key="reportTitle">Daily Report</h2>
+        <div
+          id="report-html-container"
+          style="
+            width: 100%;
+            max-width: 100%;
+            height: 400px;
+            overflow: auto;
+            border: 1px solid #ccc;
+            background-color: #fff;
+          "
+        ></div>
+        <div class="modal-actions">
+          <button
+            class="cancel-btn action-button"
+            style="background-color: var(--secondary-color)"
+          >
+            <span data-key="close">Close</span>
+          </button>
+          <button
+            id="copy-report-btn"
+            class="action-button"
+            style="background-color: var(--main-color)"
+          >
+            <span data-key="copyData">Copy Report</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="setup-modal" class="modal">
+      <div class="modal-content">
+        <h2 data-key="initialSetup">Initial Setup</h2>
+        <p
+          data-key="initialSetupText"
+          style="font-size: 1.1rem; margin-bottom: 20px"
+        >
+          Please enter the current number of bins in stock to get started.
+        </p>
+        <div class="form-group">
+          <label for="initial-clean" data-key="initialClean"
+            >Initial Clean Bins</label
+          >
+          <input type="number" id="initial-clean" placeholder="e.g., 1000" />
+        </div>
+        <div class="form-group">
+          <label for="initial-dirty" data-key="initialDirty"
+            >Initial Dirty Bins</label
+          >
+          <input type="number" id="initial-dirty" placeholder="e.g., 50" />
+        </div>
+        <div class="modal-actions">
+          <button
+            id="save-setup-btn"
+            class="action-button"
+            style="width: 100%; background-color: var(--success-color)"
+          >
+            <span data-key="saveInitialStock">Save Initial Stock</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://unpkg.com/html5-qrcode"
+      type="text/javascript"
+    ></script>
+    <script src="app.js"></script>
+  </body>
+</html>
