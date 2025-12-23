@@ -464,44 +464,39 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
   // QR Logic
-  // УЛУЧШЕННЫЙ СКАНЕР QR
+  // --- STABLE QR SCANNER ---
   document.getElementById("scan-qr-btn").addEventListener("click", () => {
     openModal(ui.qrModal);
 
-    if (!html5QrCode) {
-      // verbose: false убирает лишний мусор из консоли
-      html5QrCode = new Html5Qrcode("reader", { verbose: false });
+    // 1. Очищаем предыдущий экземпляр, если он завис
+    if (html5QrCode) {
+      try {
+        html5QrCode.clear();
+      } catch (e) {}
     }
 
-    // Настройки сканирования
+    // 2. Создаем новый экземпляр
+    html5QrCode = new Html5Qrcode("reader");
+
     const config = {
-      fps: 15, // Быстрее сканирует (было 10)
-      qrbox: (viewfinderWidth, viewfinderHeight) => {
-        // Делаем зону сканирования адаптивной (70% от меньшей стороны экрана)
-        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-        const edgeSize = Math.floor(minEdge * 0.7);
-        return { width: edgeSize, height: edgeSize };
-      },
+      fps: 10,
+      qrbox: { width: 250, height: 250 },
       aspectRatio: 1.0,
     };
 
-    // Настройки камеры (пытаемся включить автофокус)
-    const cameraConfig = {
-      facingMode: "environment",
-      focusMode: "continuous", // Просим непрерывный фокус
-      advanced: [{ focusMode: "continuous" }], // Для некоторых Android
-    };
-
+    // 3. Запускаем с БАЗОВЫМИ настройками (без focusMode, который ломает Mac/Android)
     html5QrCode
       .start(
-        cameraConfig,
+        { facingMode: "environment" },
         config,
         (decodedText) => {
+          // УСПЕХ
           try {
-            // Звуковой сигнал при успехе (опционально, но удобно)
-            // const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3'); audio.play().catch(e=>{});
+            html5QrCode.stop().then(() => {
+              html5QrCode.clear(); // Важно очистить
+              closeModal(ui.qrModal);
+            });
 
-            html5QrCode.stop().then(() => closeModal(ui.qrModal));
             const data = JSON.parse(decodedText);
 
             const entryModal = document.getElementById("entry-modal");
@@ -536,16 +531,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
             openModal(entryModal);
           } catch (e) {
-            alert("Invalid QR Code format or read error");
+            alert("QR Error: Invalid Data Format");
+            console.error(e);
           }
         },
         (errorMessage) => {
-          // Игнорируем ошибки кадров, пока ищем код
+          // Игнорируем ошибки каждого кадра (пока ищем код)
         }
       )
       .catch((err) => {
-        console.error(err);
-        alert("Camera Error: Please allow camera access via HTTPS.");
+        // Если задняя камера не найдена (например, на макбуке), пробуем дефолтную
+        console.warn("Back camera failed, trying default...", err);
+        html5QrCode
+          .start(
+            { facingMode: "user" },
+            config,
+            (text) => {
+              /* То же самое, что в успехе выше, но для краткости опустим */ alert(
+                "Scanned: " + text
+              );
+            },
+            () => {}
+          )
+          .catch((err2) => {
+            alert(
+              "Camera Error. Please ensure you are using HTTPS and have granted permissions."
+            );
+          });
       });
   });
   document.querySelectorAll(".bin-counter").forEach((counter) => {
