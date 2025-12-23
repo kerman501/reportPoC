@@ -464,23 +464,50 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
   // QR Logic
+  // УЛУЧШЕННЫЙ СКАНЕР QR
   document.getElementById("scan-qr-btn").addEventListener("click", () => {
     openModal(ui.qrModal);
+
     if (!html5QrCode) {
-      html5QrCode = new Html5Qrcode("reader");
+      // verbose: false убирает лишний мусор из консоли
+      html5QrCode = new Html5Qrcode("reader", { verbose: false });
     }
-    const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+    // Настройки сканирования
+    const config = {
+      fps: 15, // Быстрее сканирует (было 10)
+      qrbox: (viewfinderWidth, viewfinderHeight) => {
+        // Делаем зону сканирования адаптивной (70% от меньшей стороны экрана)
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const edgeSize = Math.floor(minEdge * 0.7);
+        return { width: edgeSize, height: edgeSize };
+      },
+      aspectRatio: 1.0,
+    };
+
+    // Настройки камеры (пытаемся включить автофокус)
+    const cameraConfig = {
+      facingMode: "environment",
+      focusMode: "continuous", // Просим непрерывный фокус
+      advanced: [{ focusMode: "continuous" }], // Для некоторых Android
+    };
+
     html5QrCode
       .start(
-        { facingMode: "environment" },
+        cameraConfig,
         config,
         (decodedText) => {
           try {
+            // Звуковой сигнал при успехе (опционально, но удобно)
+            // const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3'); audio.play().catch(e=>{});
+
             html5QrCode.stop().then(() => closeModal(ui.qrModal));
             const data = JSON.parse(decodedText);
+
             const entryModal = document.getElementById("entry-modal");
             entryModal.querySelector("h2").textContent = T("newEntryTitle");
             entryModal.dataset.editingId = "";
+
             document.getElementById("foreman-name").value = data.f || "";
             document.getElementById("job-number").value = data.j || "";
 
@@ -491,6 +518,7 @@ document.addEventListener("DOMContentLoaded", () => {
             } else {
               truckField.value = data.t;
             }
+
             entryModal.querySelector(
               '[data-type="dirtyIn"] .bin-count-display'
             ).textContent = data.in || 0;
@@ -508,16 +536,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
             openModal(entryModal);
           } catch (e) {
-            alert("Invalid QR Code format");
+            alert("Invalid QR Code format or read error");
           }
         },
-        (errorMessage) => {}
+        (errorMessage) => {
+          // Игнорируем ошибки кадров, пока ищем код
+        }
       )
       .catch((err) => {
-        alert("Error starting camera.");
+        console.error(err);
+        alert("Camera Error: Please allow camera access via HTTPS.");
       });
   });
-
   document.querySelectorAll(".bin-counter").forEach((counter) => {
     const span = counter.querySelector(".bin-count-display");
     counter.addEventListener("click", (e) => {
@@ -1090,7 +1120,41 @@ document.addEventListener("DOMContentLoaded", () => {
       .querySelector("span").textContent = T("copyData");
     openModal(document.getElementById("report-modal"));
   }
+  // --- COPY REPORT LOGIC ---
+  document.getElementById("copy-report-btn").addEventListener("click", () => {
+    const reportContainer = document.getElementById("report-html-container");
+    const selection = window.getSelection();
+    const range = document.createRange();
 
+    // Выделяем содержимое отчета
+    range.selectNodeContents(reportContainer);
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    try {
+      // Копируем
+      const successful = document.execCommand("copy");
+      if (successful) {
+        // Меняем текст кнопки на "Copied!"
+        const copyButtonSpan = document
+          .getElementById("copy-report-btn")
+          .querySelector("span");
+        const originalText = T("copyData");
+        copyButtonSpan.textContent = T("copied");
+        // Возвращаем текст обратно через 2 секунды
+        setTimeout(() => {
+          copyButtonSpan.textContent = originalText;
+        }, 2000);
+      } else {
+        alert("Copy failed.");
+      }
+    } catch (err) {
+      console.error("Failed to copy report: ", err);
+      alert("Could not copy report.");
+    }
+    // Снимаем выделение
+    selection.removeAllRanges();
+  });
   // Backup/Restore... (Same as before)
   document.getElementById("backup-btn").addEventListener("click", () => {
     const dataStr = JSON.stringify(state, null, 2);
