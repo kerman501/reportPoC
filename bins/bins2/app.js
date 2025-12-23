@@ -222,6 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const payload = {
+      authKey: "BinMaster2025",
       location: state.location,
       stock: state.stock,
       transactions: todaysTransactions,
