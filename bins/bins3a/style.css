@@ -29,6 +29,8 @@ html {
   max-width: 1000px;
   margin: 15px auto;
   padding: 15px;
+  /* Добавим отступ снизу, чтобы контент не прилипал к краю */
+  padding-bottom: 50px;
 }
 .hidden {
   display: none !important;
@@ -217,6 +219,8 @@ html {
 .transaction-actions button:hover {
   background-color: #f0f0f0;
 }
+
+/* --- MODAL UPDATES FOR MOBILE SCROLLING --- */
 .modal {
   display: none;
   position: fixed;
@@ -228,21 +232,62 @@ html {
   background-color: rgba(0, 0, 0, 0.6);
   justify-content: center;
   align-items: center;
+  padding: 10px; /* Отступ от краев экрана */
+  box-sizing: border-box;
 }
+
 .modal-content {
   background-color: var(--bg-color);
-  padding: 30px;
   border-radius: 15px;
-  width: 90%;
+  width: 100%;
   max-width: 600px;
   text-align: center;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+
+  /* NEW FLEX LAYOUT */
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh; /* Максимум 90% высоты экрана */
+  padding: 0; /* Паддинг переносим внутрь секций */
+  overflow: hidden; /* Скрываем внешний скролл */
 }
+
+/* Заголовок модального окна */
 .modal-content h2 {
   font-size: 1.8rem;
-  margin-top: 0;
-  margin-bottom: 25px;
+  margin: 0;
+  padding: 20px 20px 10px 20px;
+  flex-shrink: 0; /* Не сжимать заголовок */
+  background-color: var(--bg-color);
 }
+
+/* Прокручиваемая часть модального окна */
+.modal-scroll-content {
+  padding: 10px 20px;
+  overflow-y: auto; /* Вертикальный скролл */
+  flex-grow: 1; /* Занимает все свободное место */
+  text-align: left;
+}
+
+/* Фиксированный подвал с кнопками */
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  padding: 20px;
+  background-color: var(--bg-color);
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0; /* Не сжимать кнопки */
+}
+
+.modal-actions .action-button {
+  flex: 1;
+  padding: 15px;
+  font-size: 1.1rem;
+  color: white;
+  border: none;
+  border-radius: 8px;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
@@ -322,6 +367,8 @@ html {
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
+  background-color: #fff;
+  border: 1px solid #ddd;
 }
 .bin-count-display:hover {
   background-color: #e0e0e0;
@@ -339,19 +386,7 @@ html {
   font-family: monospace;
   font-size: 0.9rem;
 }
-.modal-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 25px;
-}
-.modal-actions .action-button {
-  flex: 1;
-  padding: 15px;
-  font-size: 1.1rem;
-  color: white;
-  border: none;
-  border-radius: 8px;
-}
+
 .backup-section {
   margin-top: 30px;
   padding: 20px;
@@ -363,6 +398,36 @@ html {
 }
 .backup-section .action-button {
   background-color: #5a6268;
+}
+
+/* --- JOB CARD STYLES (MULTI-JOB) --- */
+.job-card {
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 15px;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+.job-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.job-title {
+  font-weight: bold;
+  color: var(--main-color);
+}
+.remove-job-btn {
+  background: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
 }
 
 /* --- Login Grid Styles --- */
@@ -447,7 +512,7 @@ html {
 .sync-indicator {
   font-size: 1.5rem;
   margin-right: 10px;
-  opacity: 0.3; /* По умолчанию бледный - значит все сохранено */
+  opacity: 0.3;
   transition: opacity 0.3s;
 }
 .sync-indicator.syncing {

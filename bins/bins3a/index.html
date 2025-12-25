@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bin Tracker 3.1 QR</title>
+    <title>Bin Tracker 3.2 Multi-Job</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="manifest" href="manifest.json" />
 
@@ -130,14 +130,14 @@
     <div id="admin-modal" class="modal">
       <div class="modal-content">
         <h2 data-key="userManagement">User Management</h2>
-        <h3>Existing Users</h3>
-        <ul id="user-list"></ul>
-        <h3>Add New User</h3>
-        <div class="form-group">
-          <label for="new-user-name" data-key="userName">User Name</label>
-          <input type="text" id="new-user-name" required />
-        </div>
-        <div class="modal-actions">
+        <div class="modal-scroll-content">
+          <h3>Existing Users</h3>
+          <ul id="user-list"></ul>
+          <h3>Add New User</h3>
+          <div class="form-group">
+            <label for="new-user-name" data-key="userName">User Name</label>
+            <input type="text" id="new-user-name" required />
+          </div>
           <div
             class="form-group"
             style="
@@ -146,29 +146,20 @@
               padding-top: 15px;
             "
           >
-            <div
-              class="form-group"
-              style="
-                margin-top: 20px;
-                border-top: 1px solid #ccc;
-                padding-top: 15px;
-              "
+            <label for="location-select">Warehouse Location</label>
+            <select
+              id="location-select"
+              style="width: 100%; padding: 10px; font-size: 1.1rem"
             >
-              <label for="location-select">Warehouse Location</label>
-              <select
-                id="location-select"
-                style="width: 100%; padding: 10px; font-size: 1.1rem"
-              >
-                <option value="Maspeth">Maspeth</option>
-                <option value="Ditmars">Ditmars</option>
-                <option value="Ditmars 1">Ditmars 1</option>
-                <option value="Ditmars 2">Ditmars 2</option>
-                <option value="Borden">Borden</option>
-              </select>
-              <p style="font-size: 0.8rem; color: #666"></p>
-            </div>
-            <p style="font-size: 0.8rem; color: #666"></p>
+              <option value="Maspeth">Maspeth</option>
+              <option value="Ditmars">Ditmars</option>
+              <option value="Ditmars 1">Ditmars 1</option>
+              <option value="Ditmars 2">Ditmars 2</option>
+              <option value="Borden">Borden</option>
+            </select>
           </div>
+        </div>
+        <div class="modal-actions">
           <button
             class="cancel-btn action-button"
             style="background-color: var(--secondary-color)"
@@ -189,59 +180,54 @@
     <div id="entry-modal" class="modal">
       <div class="modal-content" data-editing-id="">
         <h2 data-key="newEntryTitle">New Truck Entry</h2>
-        <div class="form-group" style="flex: 1">
-          <label for="job-number" data-key="jobNumber">Job Number</label>
-          <input type="text" id="job-number" required />
-          <div class="validation-message" data-key="fieldRequired">
-            This field is required.
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="truck-number" data-key="truckNumber">Truck Number</label>
-          <input type="text" id="truck-number" required />
-          <div class="validation-message" data-key="fieldRequired">
-            This field is required.
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="foreman-name" data-key="foremanName">Foreman Name</label>
-          <input type="text" id="foreman-name" list="foremen-list" required />
-          <datalist id="foremen-list"></datalist>
-          <div class="validation-message" data-key="fieldRequired">
-            This field is required.
-          </div>
-        </div>
-        <div class="truck-ops-container">
-          <div class="truck-op-section inbound">
-            <h3 data-key="inboundDirty">📥 Dirty In</h3>
-            <div class="bin-counter" data-type="dirtyIn">
-              <span class="bin-count-display">0</span>
-              <div class="bin-quick-btn-group">
-                <button class="bin-quick-btn" data-op="add" data-value="25">
-                  +25
-                </button>
-                <button class="bin-quick-btn" data-op="add" data-value="100">
-                  +100
-                </button>
-              </div>
+
+        <div class="modal-scroll-content">
+          <div class="entry-header-section">
+            <div class="form-group">
+              <label for="truck-number" data-key="truckNumber"
+                >Truck Number</label
+              >
+              <input
+                type="text"
+                id="truck-number"
+                required
+                placeholder="Example: 101"
+              />
+            </div>
+            <div class="form-group">
+              <label for="foreman-name" data-key="foremanName"
+                >Foreman Name</label
+              >
+              <input
+                type="text"
+                id="foreman-name"
+                list="foremen-list"
+                required
+              />
+              <datalist id="foremen-list"></datalist>
             </div>
           </div>
-          <div class="truck-op-section outbound">
-            <h3 data-key="outboundClean">📤 Clean Out</h3>
-            <div class="bin-counter" data-type="cleanOut">
-              <span class="bin-count-display">0</span>
-              <div class="bin-quick-btn-group">
-                <button class="bin-quick-btn" data-op="add" data-value="25">
-                  +25
-                </button>
-                <button class="bin-quick-btn" data-op="add" data-value="100">
-                  +100
-                </button>
-              </div>
-            </div>
-          </div>
+
+          <hr style="border: 0; border-top: 2px dashed #eee; margin: 15px 0" />
+
+          <div id="jobs-container"></div>
+
+          <button
+            id="add-job-row-btn"
+            class="action-button"
+            style="
+              background-color: #17a2b8;
+              margin-top: 10px;
+              padding: 10px;
+              font-size: 1rem;
+            "
+          >
+            <span>➕ Add Another Job</span>
+          </button>
+
+          <div class="validation-message" id="entry-form-validation"></div>
         </div>
-        <div class="validation-message" id="entry-form-validation"></div>
+
         <div class="modal-actions">
           <button
             class="cancel-btn action-button"
@@ -263,25 +249,27 @@
     <div id="wash-modal" class="modal">
       <div class="modal-content" data-editing-id="">
         <h2 data-key="washBinsTitle">Wash Bins</h2>
-        <div class="form-group">
-          <label data-key="quantityWashed">Quantity Washed</label>
-          <div class="bin-counter" data-type="washQty">
-            <span class="bin-count-display">0</span>
-            <div class="bin-quick-btn-group">
-              <button class="bin-quick-btn" data-op="add" data-value="25">
-                +25
-              </button>
-              <button class="bin-quick-btn" data-op="add" data-value="100">
-                +100
-              </button>
+        <div class="modal-scroll-content">
+          <div class="form-group">
+            <label data-key="quantityWashed">Quantity Washed</label>
+            <div class="bin-counter" data-type="washQty">
+              <span class="bin-count-display">0</span>
+              <div class="bin-quick-btn-group">
+                <button class="bin-quick-btn" data-op="add" data-value="25">
+                  +25
+                </button>
+                <button class="bin-quick-btn" data-op="add" data-value="100">
+                  +100
+                </button>
+              </div>
             </div>
           </div>
+          <div class="form-group">
+            <label for="wash-comment" data-key="comment">Comment</label>
+            <input type="text" id="wash-comment" />
+          </div>
+          <div class="validation-message" id="wash-form-validation"></div>
         </div>
-        <div class="form-group">
-          <label for="wash-comment" data-key="comment">Comment</label>
-          <input type="text" id="wash-comment" />
-        </div>
-        <div class="validation-message" id="wash-form-validation"></div>
         <div class="modal-actions">
           <button
             class="cancel-btn action-button"
@@ -303,25 +291,27 @@
     <div id="adjust-modal" class="modal">
       <div class="modal-content" data-editing-id="">
         <h2 data-key="adjustStockTitle">Adjust Stock</h2>
-        <div class="form-group">
-          <label for="adjust-clean" data-key="newCleanStock"
-            >New Clean Bins Total</label
-          >
-          <input type="number" id="adjust-clean" required />
+        <div class="modal-scroll-content">
+          <div class="form-group">
+            <label for="adjust-clean" data-key="newCleanStock"
+              >New Clean Bins Total</label
+            >
+            <input type="number" id="adjust-clean" required />
+          </div>
+          <div class="form-group">
+            <label for="adjust-dirty" data-key="newDirtyStock"
+              >New Dirty Bins Total</label
+            >
+            <input type="number" id="adjust-dirty" required />
+          </div>
+          <div class="form-group">
+            <label for="adjust-reason" data-key="reasonForAdjustment"
+              >Reason for Adjustment</label
+            >
+            <input type="text" id="adjust-reason" required />
+          </div>
+          <div class="validation-message" id="adjust-form-validation"></div>
         </div>
-        <div class="form-group">
-          <label for="adjust-dirty" data-key="newDirtyStock"
-            >New Dirty Bins Total</label
-          >
-          <input type="number" id="adjust-dirty" required />
-        </div>
-        <div class="form-group">
-          <label for="adjust-reason" data-key="reasonForAdjustment"
-            >Reason for Adjustment</label
-          >
-          <input type="text" id="adjust-reason" required />
-        </div>
-        <div class="validation-message" id="adjust-form-validation"></div>
         <div class="modal-actions">
           <button
             class="cancel-btn action-button"
@@ -375,23 +365,25 @@
     <div id="setup-modal" class="modal">
       <div class="modal-content">
         <h2 data-key="initialSetup">Initial Setup</h2>
-        <p
-          data-key="initialSetupText"
-          style="font-size: 1.1rem; margin-bottom: 20px"
-        >
-          Please enter the current number of bins in stock to get started.
-        </p>
-        <div class="form-group">
-          <label for="initial-clean" data-key="initialClean"
-            >Initial Clean Bins</label
+        <div class="modal-scroll-content">
+          <p
+            data-key="initialSetupText"
+            style="font-size: 1.1rem; margin-bottom: 20px"
           >
-          <input type="number" id="initial-clean" placeholder="e.g., 1000" />
-        </div>
-        <div class="form-group">
-          <label for="initial-dirty" data-key="initialDirty"
-            >Initial Dirty Bins</label
-          >
-          <input type="number" id="initial-dirty" placeholder="e.g., 50" />
+            Please enter the current number of bins in stock to get started.
+          </p>
+          <div class="form-group">
+            <label for="initial-clean" data-key="initialClean"
+              >Initial Clean Bins</label
+            >
+            <input type="number" id="initial-clean" placeholder="e.g., 1000" />
+          </div>
+          <div class="form-group">
+            <label for="initial-dirty" data-key="initialDirty"
+              >Initial Dirty Bins</label
+            >
+            <input type="number" id="initial-dirty" placeholder="e.g., 50" />
+          </div>
         </div>
         <div class="modal-actions">
           <button
