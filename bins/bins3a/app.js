@@ -159,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const GOOGLE_SCRIPT_URL =
-    "https://script.google.com/macros/s/AKfycbwB1v7RppIG_OUM0k8mqdRxfiFNnBUO2wQ8IAYoFsj1-gbXShhMLL-esaneZJXShirKbQ/exec";
+    "https://script.google.com/macros/s/AKfycbyIc_oTbjP4WKaATEDpL4Ux11XM5USBLAjP8Sqo1p3BBkNSwonOjj_nwlkRcT8o2BGL/exec";
 
   let syncTimeout;
   let html5QrCode;
