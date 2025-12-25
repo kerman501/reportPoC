@@ -417,14 +417,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- DYNAMIC FORM HANDLERS (MULTI-JOB) ---
 
-  // Создает HTML для одной карточки работы
   function createJobRowHtml(index, data = {}) {
-    // data keys: jobNumber, dirtyIn, cleanOut
     const jobNum = data.jobNumber || "";
     const dirty = data.dirtyIn || 0;
     const clean = data.cleanOut || 0;
 
-    // Translation helper inside HTML generator
     const tJob = T("jobNumber");
     const tIn = T("inboundDirty");
     const tOut = T("outboundClean");
@@ -469,28 +466,23 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
   }
 
-  // Добавляет логику (слушатели событий) к свежесозданной карточке
   function attachJobRowEvents(containerElement) {
     containerElement.querySelectorAll(".bin-counter").forEach((counter) => {
       const span = counter.querySelector(".bin-count-display");
 
-      // Логика кнопок +25/+100
       counter.addEventListener("click", (e) => {
         if (e.target.tagName !== "BUTTON") return;
-        // Находим спан внутри текущего каунтера (чтобы не путать с другими картами)
         let count = parseInt(span.textContent, 10);
         if (e.target.dataset.op === "add")
           count += parseInt(e.target.dataset.value, 10);
         span.textContent = count;
       });
 
-      // Логика ручного ввода (С ИСПРАВЛЕНИЕМ "0")
       span.addEventListener("click", () => {
         const input = document.createElement("input");
         input.type = "number";
         input.className = "bin-count-input";
 
-        // FIX: Оставляем старое значение как placeholder, но value делаем пустым
         input.placeholder = span.textContent;
         input.value = "";
 
@@ -498,7 +490,6 @@ document.addEventListener("DOMContentLoaded", () => {
         input.focus();
 
         const onBlur = () => {
-          // Если ничего не ввели, возвращаем то, что было в placeholder
           let val = input.value.trim();
           if (val === "") val = input.placeholder;
 
@@ -528,18 +519,15 @@ document.addEventListener("DOMContentLoaded", () => {
     addJobRow();
   });
 
-  // Открытие окна в режиме "Создать"
   document.getElementById("add-entry-btn").addEventListener("click", () => {
     const modal = document.getElementById("entry-modal");
     modal.querySelector("h2").textContent = T("newEntryTitle");
     modal.dataset.editingId = "";
 
-    // Очистка
     document.getElementById("truck-number").value = "";
     document.getElementById("foreman-name").value = "";
     document.getElementById("jobs-container").innerHTML = "";
 
-    // Обновляем список форманов
     const foremenList = document.getElementById("foremen-list");
     foremenList.innerHTML = "";
     state.foremen.forEach((name) => {
@@ -548,20 +536,17 @@ document.addEventListener("DOMContentLoaded", () => {
       foremenList.appendChild(option);
     });
 
-    // Добавляем первую пустую строку
     jobCounter = 0;
-    addJobRow(); // Add one empty row
+    addJobRow();
 
-    // Кнопка добавления доступна
     document.getElementById("add-job-row-btn").style.display = "block";
 
     openModal(modal);
   });
 
-  // --- SAVE LOGIC UPDATED FOR MULTI-JOB ---
+  // --- SAVE LOGIC UPDATED ---
   document.getElementById("save-entry-btn").addEventListener("click", () => {
     const modal = document.getElementById("entry-modal");
-    // Simple validation for global fields
     const truckNumber = document.getElementById("truck-number").value.trim();
     const foremanName = document.getElementById("foreman-name").value.trim();
 
@@ -573,7 +558,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const currentUser = getCurrentUser();
     if (!currentUser) return;
 
-    // Собираем данные со всех карточек
     const jobCards = modal.querySelectorAll(".job-card");
     const transactionsToAdd = [];
     let isValid = true;
@@ -608,23 +592,21 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Handle Foreman List
     if (foremanName && !state.foremen.includes(foremanName)) {
       state.foremen.push(foremanName);
     }
 
-    // Проверяем, редактирование это или создание
+    // ИСПРАВЛЕНИЕ: Используем parseFloat для ID, так как они теперь дробные
     const editingId = modal.dataset.editingId
-      ? parseInt(modal.dataset.editingId, 10)
+      ? parseFloat(modal.dataset.editingId)
       : null;
 
     if (editingId) {
       // --- EDIT MODE (Single Entry) ---
-      // В режиме редактирования мы работаем только с первой карточкой (так как редактируем одну запись)
       const txIndex = state.transactions.findIndex((t) => t.id === editingId);
       if (txIndex > -1) {
         const oldTx = state.transactions[txIndex];
-        const newData = transactionsToAdd[0]; // Take first card
+        const newData = transactionsToAdd[0]; // Берем первую карту (при редактировании она одна)
 
         state.stock.dirty -= oldTx.dirtyIn;
         state.stock.clean += oldTx.cleanOut;
@@ -649,7 +631,7 @@ document.addEventListener("DOMContentLoaded", () => {
         state.stock.clean -= jobData.cleanOut;
 
         state.transactions.push({
-          id: Date.now() + Math.random(), // Unique ID
+          id: Date.now() + Math.random(),
           type: "truck",
           timestamp: timestamp,
           truckNumber,
@@ -672,7 +654,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ui.transactionsContainer.addEventListener("click", (e) => {
     const target = e.target.closest(".delete-btn, .edit-btn");
     if (!target) return;
-    const id = parseFloat(target.dataset.id); // Use parseFloat because ID might be float now
+    const id = parseFloat(target.dataset.id);
     const txIndex = state.transactions.findIndex((t) => t.id === id);
     if (txIndex === -1) return;
     const tx = state.transactions[txIndex];
@@ -700,15 +682,12 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.querySelector("h2").textContent = `Edit ${tx.type} Entry`;
 
       if (tx.type === "truck") {
-        // Setup Editing Mode (Single Card)
         document.getElementById("jobs-container").innerHTML = "";
         jobCounter = 0;
 
-        // Populate Global
         document.getElementById("foreman-name").value = tx.foreman || "";
         document.getElementById("truck-number").value = tx.truckNumber;
 
-        // Update Foreman List
         const foremenList = document.getElementById("foremen-list");
         foremenList.innerHTML = "";
         state.foremen.forEach((name) => {
@@ -717,23 +696,17 @@ document.addEventListener("DOMContentLoaded", () => {
           foremenList.appendChild(option);
         });
 
-        // Add ONE row with existing data
+        // Добавляем одну карточку с существующими данными
         addJobRow({
           jobNumber: tx.jobNumber,
           dirtyIn: tx.dirtyIn,
           cleanOut: tx.cleanOut,
         });
 
-        // Hide "Add Job" button in Edit Mode (simplification)
         document.getElementById("add-job-row-btn").style.display = "none";
       } else if (tx.type === "wash") {
-        // Initialize wash modal events (reuse same logic for clearing 0)
-        // Need to re-attach events here or ensure they exist.
-        // For simplicity, we manually set values here.
         modal.querySelector(".bin-count-display").textContent = tx.quantity;
         document.getElementById("wash-comment").value = tx.comment;
-
-        // Attach logic to wash modal counter specifically here if not global
         attachJobRowEvents(modal);
       }
       openModal(modal);
@@ -743,7 +716,6 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTransactions();
   });
 
-  // --- VALIDATION & UTILS ---
   function validateForm(formElement) {
     let isValid = true;
     clearValidation(formElement);
@@ -770,7 +742,6 @@ document.addEventListener("DOMContentLoaded", () => {
       )
     );
 
-  // --- QR LOGIC (Simple: Fills first row) ---
   document.getElementById("scan-qr-btn").addEventListener("click", () => {
     openModal(ui.qrModal);
     if (html5QrCode) {
@@ -797,18 +768,15 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             const data = JSON.parse(decodedText);
 
-            // Open Modal
             const entryModal = document.getElementById("entry-modal");
             entryModal.querySelector("h2").textContent = T("newEntryTitle");
             entryModal.dataset.editingId = "";
             document.getElementById("add-job-row-btn").style.display = "block";
 
-            // Fill Global
             document.getElementById("foreman-name").value = data.f || "";
             const truckField = document.getElementById("truck-number");
             truckField.value = !data.t || data.t === "000" ? "" : data.t;
 
-            // Reset Container and Add Row with QR Data
             document.getElementById("jobs-container").innerHTML = "";
             jobCounter = 0;
             addJobRow({
@@ -817,7 +785,6 @@ document.addEventListener("DOMContentLoaded", () => {
               cleanOut: data.out || 0,
             });
 
-            // Populate Foreman List
             const foremenList = document.getElementById("foremen-list");
             foremenList.innerHTML = "";
             state.foremen.forEach((name) => {
@@ -838,8 +805,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   });
 
-  // --- OTHER MODAL LOGIC (Wash, Adjust, etc) ---
-  // Need to attach "smart input" logic to Wash Modal too
   attachJobRowEvents(document.getElementById("wash-modal"));
 
   document.getElementById("wash-bins-btn").addEventListener("click", () => {
@@ -873,7 +838,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     const editingId = modal.dataset.editingId
-      ? parseInt(modal.dataset.editingId, 10)
+      ? parseFloat(modal.dataset.editingId)
       : null;
 
     if (editingId) {
@@ -913,7 +878,6 @@ document.addEventListener("DOMContentLoaded", () => {
     closeModal(modal);
   });
 
-  // (Adjust logic remains mostly same, omitted for brevity but should be kept in real file)
   document.getElementById("save-adjust-btn").addEventListener("click", () => {
     const modal = document.getElementById("adjust-modal");
     if (!validateForm(modal)) return;
@@ -949,7 +913,6 @@ document.addEventListener("DOMContentLoaded", () => {
     closeModal(modal);
   });
 
-  // Admin and User Management
   function renderUserList() {
     ui.userList.innerHTML = "";
     state.users.forEach((user) => {
@@ -979,6 +942,9 @@ document.addEventListener("DOMContentLoaded", () => {
     ui.locationSelect.addEventListener("change", (e) => {
       state.location = e.target.value;
       saveState();
+      alert(
+        `✅ Location saved: ${e.target.options[e.target.selectedIndex].text}`
+      );
     });
   }
 
@@ -1007,7 +973,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Report Generation (Keep existing large function from previous file)
+  // --- REPORT GENERATION (Restored Full Version) ---
   document.getElementById("report-btn").addEventListener("click", () => {
     const reportDateVal = ui.reportDateInput.value;
     if (!reportDateVal) {
@@ -1022,43 +988,246 @@ document.addEventListener("DOMContentLoaded", () => {
     generateReportHtml(transactionsForDate);
   });
 
-  // *** Вставь сюда функцию generateReportHtml из предыдущей версии (она не менялась) ***
-  // Для экономии места в ответе я ее не дублирую, но она должна быть в файле!
   function generateReportHtml(transactionsForDate) {
-    // ... (код из старого файла)
-    // Чтобы код работал, скопируй старую функцию сюда.
-    // Если нужно, я могу её повторить полностью.
     if (transactionsForDate.length === 0) {
       alert(T("noDataForDate"));
       return;
     }
-    // ... (остальной код генерации таблицы)
-    // Просто скопируй logic из своего файла app.js в это место
-    // ТЕМ НЕ МЕНЕЕ, ДЛЯ ПОЛНОТЫ КАРТИНЫ Я ДОБАВЛЮ МИНИМАЛЬНУЮ ВЕРСИЮ, ЧТОБЫ КОД НЕ УПАЛ:
-    let html = "<h2>Report</h2><table>";
-    transactionsForDate.forEach((t) => {
-      html += `<tr><td>${t.type}</td><td>${t.truckNumber || ""}</td><td>${
-        t.dirtyIn || 0
-      }</td><td>${t.cleanOut || 0}</td></tr>`;
-    });
-    html += "</table>";
-    // В реальном файле используй свою красивую функцию!
-    const fullHtmlReport = html;
-    document.getElementById("report-html-container").innerHTML = fullHtmlReport; // Placeholder
+
+    const totalReceived = transactionsForDate
+      .filter((t) => t.type === "truck")
+      .reduce((sum, t) => sum + (t.dirtyIn || 0), 0);
+    const totalShipped = transactionsForDate
+      .filter((t) => t.type === "truck")
+      .reduce((sum, t) => sum + (t.cleanOut || 0), 0);
+    const washedByPerson = transactionsForDate
+      .filter((t) => t.type === "wash")
+      .reduce((acc, t) => {
+        if (t.user) acc[t.user] = (acc[t.user] || 0) + t.quantity;
+        return acc;
+      }, {});
+    const activityByUser = transactionsForDate.reduce((acc, t) => {
+      if (t.user) acc[t.user] = (acc[t.user] || 0) + 1;
+      return acc;
+    }, {});
+    const endOfDayClean = state.stock.clean;
+    const endOfDayDirty = state.stock.dirty;
+
+    const transactionRowsHtml = transactionsForDate
+      .map((t, index) => {
+        const d = new Date(t.timestamp);
+        const date = d.toLocaleDateString("en-CA");
+        const time = d.toLocaleTimeString([], {
+          hour12: false,
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const rowStyle =
+          index % 2 === 0
+            ? "background-color: #ffffff;"
+            : "background-color: #f3f5f7;";
+
+        let typeCell = "",
+          dirtyInCell = "0",
+          cleanOutCell = "0",
+          qtyCell = "",
+          commentCell = "",
+          jobNumberCell = "",
+          truckCell = "",
+          foremanCell = "";
+
+        switch (t.type) {
+          case "truck":
+            typeCell =
+              '<span style="display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; color: white; background-color: #3498db;">truck</span>';
+            dirtyInCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px; color: #e74c3c; font-weight: 600;">${
+              t.dirtyIn || 0
+            }</td>`;
+            cleanOutCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px; color: #27ae60; font-weight: 600;">${
+              t.cleanOut || 0
+            }</td>`;
+            qtyCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            commentCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            jobNumberCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.jobNumber || ""
+            }</td>`;
+            truckCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.truckNumber || ""
+            }</td>`;
+            foremanCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.foreman || ""
+            }</td>`;
+            break;
+          case "wash":
+            typeCell =
+              '<span style="display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; color: white; background-color: #2ecc71;">wash</span>';
+            dirtyInCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            cleanOutCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            qtyCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${t.quantity}</td>`;
+            commentCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.comment || ""
+            }</td>`;
+            jobNumberCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            truckCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            foremanCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            break;
+          case "adjust":
+            typeCell =
+              '<span style="display: inline-block; padding: 4px 10px; font-size: 12px; font-weight: 700; border-radius: 12px; color: white; background-color: #f39c12;">adjust</span>';
+            dirtyInCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            cleanOutCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            qtyCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            commentCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+              t.reason || ""
+            }</td>`;
+            jobNumberCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            truckCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            foremanCell = `<td style="border: 1px solid #dfe2e5; padding: 10px 15px;"></td>`;
+            break;
+        }
+        return `<tr style="${rowStyle}">
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${date}</td>
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${time}</td>
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${typeCell}</td>
+                    <td style="border: 1px solid #dfe2e5; padding: 10px 15px;">${
+                      t.user || ""
+                    }</td>
+                    ${foremanCell} ${jobNumberCell} ${truckCell} ${dirtyInCell} ${cleanOutCell} ${qtyCell} ${commentCell}
+                </tr>`;
+      })
+      .join("");
+
+    // Summary
+    const sortedActivity = Object.entries(activityByUser).sort((a, b) =>
+      a[0].localeCompare(b[0])
+    );
+    const washingEntries = Object.entries(washedByPerson);
+    const maxRows = Math.max(washingEntries.length, sortedActivity.length, 2);
+    let summaryTableBodyHtml = "";
+
+    for (let i = 0; i < maxRows; i++) {
+      let endOfDayHtml =
+        i === 0
+          ? `<td style="padding: 8px; border-left: 1px solid #dfe2e5; text-align: right; font-weight: bold; color: #27ae60;">${T(
+              "cleanStock"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left; font-weight: bold; font-size: 16px; color: #27ae60;">${endOfDayClean}</td>`
+          : i === 1
+          ? `<td style="padding: 8px; border-left: 1px solid #dfe2e5; text-align: right; font-weight: bold; color: #e74c3c;">${T(
+              "dirtyStock"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left; font-weight: bold; font-size: 16px; color: #e74c3c;">${endOfDayDirty}</td>`
+          : `<td style="padding: 8px; border-left: 1px solid #dfe2e5;"></td><td style="padding: 8px; border-right: 5px solid #34495e;"></td>`;
+      let movementHtml =
+        i === 0
+          ? `<td style="padding: 8px; text-align: right;">${T(
+              "totalReceived"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left;"><b>${totalReceived}</b></td>`
+          : i === 1
+          ? `<td style="padding: 8px; text-align: right;">${T(
+              "totalShipped"
+            )}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left;"><b>${totalShipped}</b></td>`
+          : `<td style="padding: 8px;"></td><td style="padding: 8px; border-right: 5px solid #34495e;"></td>`;
+      let washingHtml = washingEntries[i]
+        ? `<td style="padding: 8px; text-align: right;">${washingEntries[i][0]}:</td><td style="padding: 8px; border-right: 5px solid #34495e; text-align: left;"><b>${washingEntries[i][1]}</b></td>`
+        : `<td style="padding: 8px;"></td><td style="padding: 8px; border-right: 5px solid #34495e;"></td>`;
+      let activityHtml = sortedActivity[i]
+        ? `<td style="padding: 8px; text-align: right;">${sortedActivity[i][0]}:</td><td style="padding: 8px; border-right: 1px solid #dfe2e5; text-align: left;"><b>${sortedActivity[i][1]} op(s)</b></td>`
+        : `<td style="padding: 8px;"></td><td style="padding: 8px; border-right: 1px solid #dfe2e5;"></td>`;
+      summaryTableBodyHtml += `<tr>${endOfDayHtml}${movementHtml}${washingHtml}${activityHtml}</tr>`;
+    }
+
+    const fullHtmlReport = `
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; margin: 20px; background-color: #f9f9f9;">
+                <h2 style="font-family: inherit; color: #2c3e50;">Operations Log</h2>
+                <table style="border-collapse: collapse; width: 100%;">
+                    <thead>
+                        <tr style="background-color: #2c3e50; color: #ffffff;">
+                            <th style="width: 100px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">Date</th>
+                            <th style="width: 90px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">Time</th>
+                            <th style="width: 80px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">Type</th>
+                            <th style="width: 120px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "employeeName"
+                            )}</th>
+                            <th style="width: 120px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "foreman"
+                            )}</th>
+                            <th style="width: 120px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "jobNumber"
+                            )}</th>
+                            <th style="width: 100px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "truck"
+                            )}</th>
+                            <th style="width: 80px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "inboundDirty"
+                            )}</th>
+                            <th style="width: 90px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "outboundClean"
+                            )}</th>
+                            <th style="width: 80px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "quantityWashed"
+                            )}</th>
+                            <th style="width: 200px; padding: 12px 15px; border: 1px solid #2c3e50; font-weight: 600; text-transform: uppercase; font-size: 12px; text-align: left;">${T(
+                              "comment"
+                            )}</th>
+                        </tr>
+                        </thead>
+                    <tbody>${transactionRowsHtml}</tbody>
+                </table>
+                <br>
+                <h2 style="font-family: inherit; color: #2c3e50;">${T(
+                  "summaryTitle"
+                )}</h2>
+                <table style="border-collapse: collapse; border-spacing: 0;">
+                    <thead>
+                        <tr style="background-color: #34495e; color: #ffffff;">
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; border-right-width: 5px; text-align: center; font-size: 13px;">End-of-Day Totals</th>
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; border-right-width: 5px; text-align: center; font-size: 13px;">${T(
+                              "binMovement"
+                            )}</th>
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; border-right-width: 5px; text-align: center; font-size: 13px;">${T(
+                              "washingSummary"
+                            )}</th>
+                            <th colspan="2" style="padding: 12px; border: 1px solid #34495e; text-align: center; font-size: 13px;">${T(
+                              "activityByUser"
+                            )}</th>
+                        </tr>
+                    </thead>
+                    <tbody style="font-size: 14px; background-color: #f3f5f7;">${summaryTableBodyHtml}</tbody>
+                </table>
+            </body>`;
+    document.getElementById("report-html-container").innerHTML = fullHtmlReport;
+    document
+      .getElementById("copy-report-btn")
+      .querySelector("span").textContent = T("copyData");
     openModal(document.getElementById("report-modal"));
   }
 
-  // Copy/Backup Logic (Standard)
   document.getElementById("copy-report-btn").addEventListener("click", () => {
-    // ... (старый код копирования)
     const reportContainer = document.getElementById("report-html-container");
     const selection = window.getSelection();
     const range = document.createRange();
+
     range.selectNodeContents(reportContainer);
     selection.removeAllRanges();
     selection.addRange(range);
-    document.execCommand("copy");
-    alert("Copied!");
+
+    try {
+      const successful = document.execCommand("copy");
+      if (successful) {
+        const copyButtonSpan = document
+          .getElementById("copy-report-btn")
+          .querySelector("span");
+        const originalText = T("copyData");
+        copyButtonSpan.textContent = T("copied");
+        setTimeout(() => {
+          copyButtonSpan.textContent = originalText;
+        }, 2000);
+      } else {
+        alert("Copy failed.");
+      }
+    } catch (err) {
+      console.error("Failed to copy report: ", err);
+      alert("Could not copy report.");
+    }
     selection.removeAllRanges();
   });
 
@@ -1095,7 +1264,6 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsText(file);
   });
 
-  // Initialization
   const initializeApp = () => {
     loadState();
     setLanguage(state.language || "en");
@@ -1108,7 +1276,6 @@ document.addEventListener("DOMContentLoaded", () => {
       openModal(ui.loginModal);
     }
 
-    // Listeners
     Object.values(document.querySelectorAll(".lang-switcher button")).forEach(
       (btn) =>
         btn.addEventListener("click", () => setLanguage(btn.id.split("-")[1]))
