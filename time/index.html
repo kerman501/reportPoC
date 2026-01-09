@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Work Time Tracker</title>
+    <style>
+      :root {
+        --primary: #25d366; /* WhatsApp Green */
+        --primary-dark: #128c7e;
+        --danger: #ef4444;
+        --bg: #f3f4f6;
+        --card: #ffffff;
+        --text: #1f2937;
+        --text-light: #6b7280;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 500px;
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0 0 10px 0;
+      }
+
+      /* Inputs */
+      .input-group {
+        margin-bottom: 20px;
+      }
+      label {
+        display: block;
+        font-size: 0.9em;
+        color: var(--text-light);
+        margin-bottom: 5px;
+      }
+      input[type="text"],
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        box-sizing: border-box;
+        font-size: 16px;
+      }
+
+      /* Buttons */
+      .btn {
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        width: 100%;
+        transition: opacity 0.2s;
+        margin-bottom: 10px;
+      }
+      .btn:active {
+        opacity: 0.8;
+      }
+
+      .btn-primary {
+        background-color: var(--primary);
+        color: white;
+      }
+      .btn-danger {
+        background-color: var(--danger);
+        color: white;
+      }
+      .btn-outline {
+        background-color: transparent;
+        border: 1px solid #d1d5db;
+        color: var(--text);
+      }
+      .btn-sm {
+        padding: 5px 10px;
+        font-size: 12px;
+        width: auto;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      /* Status Box */
+      .status-box {
+        background: #e5e7eb;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-family: monospace;
+        cursor: pointer;
+        border: 1px dashed #9ca3af;
+      }
+      .status-box:hover {
+        background: #d1d5db;
+      }
+
+      /* List */
+      .history-list {
+        list-style: none;
+        padding: 0;
+        margin-top: 20px;
+      }
+      .history-item {
+        border-bottom: 1px solid #e5e7eb;
+        padding: 10px 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .history-details {
+        flex-grow: 1;
+      }
+      .history-date {
+        font-weight: bold;
+        font-size: 0.9em;
+      }
+      .history-time {
+        color: var(--text-light);
+        font-size: 0.85em;
+      }
+      .history-actions {
+        display: flex;
+        gap: 5px;
+      }
+
+      /* Report Section */
+      .report-section {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 2px solid #e5e7eb;
+      }
+      .total-hours {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: var(--primary-dark);
+      }
+      textarea {
+        width: 100%;
+        height: 100px;
+        margin-top: 10px;
+        font-family: monospace;
+        font-size: 12px;
+        padding: 5px;
+      }
+
+      /* Utility */
+      .hidden {
+        display: none;
+      }
+      .toast {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #333;
+        color: #fff;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 14px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        pointer-events: none;
+      }
+      .toast.show {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 15px;
+        "
+      >
+        <h2>🕒 Work Tracker</h2>
+        <button class="btn btn-outline btn-sm" onclick="app.exportData()">
+          Backup
+        </button>
+      </div>
+
+      <div class="input-group">
+        <label>Your Name (for WhatsApp)</label>
+        <input
+          type="text"
+          id="username"
+          placeholder="e.g. Alex"
+          onchange="app.saveName()"
+        />
+      </div>
+
+      <div id="action-area">
+        <button
+          id="main-btn"
+          class="btn btn-primary"
+          onclick="app.handleMainAction()"
+        >
+          Clock In
+        </button>
+
+        <div class="grid-2">
+          <button class="btn btn-outline" onclick="app.addDayOff('Day Off')">
+            Add Day Off
+          </button>
+          <button class="btn btn-outline" onclick="app.addDayOff('Paid Off')">
+            Add Paid Off (8h)
+          </button>
+        </div>
+      </div>
+
+      <div
+        class="status-box"
+        id="msg-preview"
+        onclick="app.copyToClipboard(this.innerText)"
+      >
+        (Message preview will appear here)
+      </div>
+
+      <div class="report-section">
+        <h3>Report Generation</h3>
+        <label>Select Period</label>
+        <select id="period-select" onchange="app.renderReport()"></select>
+
+        <div style="margin: 15px 0">
+          Total: <span id="total-hours" class="total-hours">0h 0m</span>
+        </div>
+
+        <button class="btn btn-outline" onclick="app.copyReport()">
+          Copy Report for Chat
+        </button>
+        <textarea id="report-text" readonly></textarea>
+      </div>
+
+      <h3>History</h3>
+      <ul id="history-list" class="history-list"></ul>
+
+      <div style="margin-top: 20px; text-align: center">
+        <button class="btn btn-danger btn-sm" onclick="app.clearAllData()">
+          Reset All Data
+        </button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast">Copied to clipboard!</div>
+
+    <script>
+      class WorkTracker {
+        constructor() {
+          this.data = JSON.parse(localStorage.getItem("workData")) || [];
+          this.currentStatus = localStorage.getItem("workStatus") || "out"; // 'in' or 'out'
+          this.currentShiftId = localStorage.getItem("currentShiftId") || null;
+          this.userName = localStorage.getItem("userName") || "";
+
+          document.getElementById("username").value = this.userName;
+          this.init();
+        }
+
+        init() {
+          this.renderUI();
+          this.populatePeriods();
+          this.renderHistory();
+          this.renderReport();
+        }
+
+        saveName() {
+          this.userName = document.getElementById("username").value;
+          localStorage.setItem("userName", this.userName);
+          this.updatePreview();
+        }
+
+        saveData() {
+          localStorage.setItem("workData", JSON.stringify(this.data));
+          localStorage.setItem("workStatus", this.currentStatus);
+          if (this.currentShiftId)
+            localStorage.setItem("currentShiftId", this.currentShiftId);
+          else localStorage.removeItem("currentShiftId");
+
+          this.renderHistory();
+          this.renderReport();
+        }
+
+        // --- Core Logic ---
+
+        handleMainAction() {
+          const now = new Date();
+          const timeString = this.formatTime(now);
+          let msg = "";
+
+          if (this.currentStatus === "out") {
+            // Clock In
+            const newShift = {
+              id: Date.now(),
+              date: this.formatDate(now), // "MM.DD"
+              fullDate: now.toISOString(),
+              type: "work",
+              in: now.getTime(),
+              out: null,
+              duration: 0,
+            };
+            this.data.unshift(newShift);
+            this.currentShiftId = newShift.id;
+            this.currentStatus = "in";
+
+            msg = `${timeString} ${this.userName} - clock in`;
+          } else {
+            // Clock Out
+            const shift = this.data.find((s) => s.id == this.currentShiftId);
+            if (shift) {
+              shift.out = now.getTime();
+              shift.duration = this.calculateDuration(shift.in, shift.out);
+            }
+            this.currentStatus = "out";
+            this.currentShiftId = null;
+
+            msg = `${timeString} ${this.userName} - clock out`;
+          }
+
+          this.saveData();
+          this.renderUI();
+          this.copyToClipboard(msg);
+          this.updatePreview(msg);
+        }
+
+        addDayOff(type) {
+          const now = new Date();
+          const duration = type === "Paid Off" ? 480 : 0; // 480 mins = 8 hours
+
+          const newEntry = {
+            id: Date.now(),
+            date: this.formatDate(now),
+            fullDate: now.toISOString(),
+            type: type, // 'Day Off' or 'Paid Off'
+            in: null,
+            out: null,
+            duration: duration,
+          };
+
+          this.data.unshift(newEntry);
+          this.saveData();
+
+          const msg = `${this.formatDate(now)} ${this.userName} - ${type}`;
+          this.copyToClipboard(msg);
+          this.updatePreview(msg);
+        }
+
+        // --- Helpers ---
+
+        formatTime(dateObj) {
+          // Returns 8:55pm
+          return dateObj
+            .toLocaleTimeString("en-US", {
+              hour: "numeric",
+              minute: "2-digit",
+              hour12: true,
+            })
+            .toLowerCase()
+            .replace(/\s/g, "");
+        }
+
+        formatDate(dateObj) {
+          // Returns 12.20
+          const month = dateObj.getMonth() + 1;
+          const day = dateObj.getDate();
+          return `${month}.${day}`;
+        }
+
+        calculateDuration(startMs, endMs) {
+          if (!startMs || !endMs) return 0;
+          const diffMs = endMs - startMs;
+          return Math.floor(diffMs / 60000); // minutes
+        }
+
+        minsToHm(mins) {
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          return `${h}h ${m}m`;
+        }
+
+        // --- UI Rendering ---
+
+        renderUI() {
+          const btn = document.getElementById("main-btn");
+          if (this.currentStatus === "out") {
+            btn.innerText = "CLOCK IN";
+            btn.className = "btn btn-primary";
+          } else {
+            btn.innerText = "CLOCK OUT";
+            btn.className = "btn btn-danger";
+          }
+        }
+
+        updatePreview(msg = "") {
+          const box = document.getElementById("msg-preview");
+          if (msg) {
+            box.innerText = msg;
+            box.style.borderColor = "var(--primary)";
+          } else {
+            box.innerText = "Ready to create message...";
+            box.style.borderColor = "#9ca3af";
+          }
+        }
+
+        renderHistory() {
+          const list = document.getElementById("history-list");
+          list.innerHTML = "";
+
+          // Show last 10 entries for brevity
+          this.data.slice(0, 10).forEach((item) => {
+            const li = document.createElement("li");
+            li.className = "history-item";
+
+            let details = "";
+            if (item.type === "work") {
+              const tIn = item.in ? this.formatTime(new Date(item.in)) : "...";
+              const tOut = item.out
+                ? this.formatTime(new Date(item.out))
+                : "...";
+              const dur =
+                item.duration > 0 ? `(${this.minsToHm(item.duration)})` : "";
+              details = `<div class="history-date">${item.date}</div>
+                               <div class="history-time">${tIn} - ${tOut} ${dur}</div>`;
+            } else {
+              details = `<div class="history-date">${item.date}</div>
+                               <div class="history-time">${item.type}</div>`;
+            }
+
+            li.innerHTML = `
+                    <div class="history-details">${details}</div>
+                    <div class="history-actions">
+                        <button class="btn btn-outline btn-sm" onclick="app.deleteEntry(${item.id})">Del</button>
+                    </div>
+                `;
+            list.appendChild(li);
+          });
+        }
+
+        deleteEntry(id) {
+          if (confirm("Delete this entry?")) {
+            this.data = this.data.filter((i) => i.id !== id);
+            if (this.currentShiftId === id) {
+              this.currentStatus = "out";
+              this.currentShiftId = null;
+            }
+            this.saveData();
+            this.renderUI();
+          }
+        }
+
+        // --- Reporting ---
+
+        populatePeriods() {
+          const select = document.getElementById("period-select");
+          select.innerHTML = "";
+
+          const today = new Date();
+          // Generate last 6 periods
+          for (let i = 0; i < 6; i++) {
+            const y = today.getFullYear();
+            const m = today.getMonth();
+
+            // Period 2 (16-End)
+            let lastDay = new Date(y, m + 1, 0).getDate();
+            let p2Name = `${this.getMonthName(m)} 16-${lastDay}, ${y}`;
+            let p2Val = `${y}-${m}-16-${lastDay}`;
+
+            // Period 1 (1-15)
+            let p1Name = `${this.getMonthName(m)} 1-15, ${y}`;
+            let p1Val = `${y}-${m}-1-15`;
+
+            let opt2 = document.createElement("option");
+            opt2.value = p2Val;
+            opt2.innerText = p2Name;
+            select.appendChild(opt2);
+
+            let opt1 = document.createElement("option");
+            opt1.value = p1Val;
+            opt1.innerText = p1Name;
+            select.appendChild(opt1);
+
+            today.setMonth(today.getMonth() - 1);
+          }
+          select.selectedIndex = 0; // Select current
+        }
+
+        getMonthName(idx) {
+          return [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ][idx];
+        }
+
+        renderReport() {
+          const val = document.getElementById("period-select").value;
+          if (!val) return;
+
+          const [year, month, startDay, endDay] = val.split("-").map(Number);
+
+          const reportData = this.data
+            .filter((item) => {
+              const d = new Date(item.fullDate);
+              // Adjust month match (js month is 0-indexed)
+              return (
+                d.getFullYear() === year &&
+                d.getMonth() === month &&
+                d.getDate() >= startDay &&
+                d.getDate() <= endDay
+              );
+            })
+            .sort((a, b) => b.in - a.in); // Sort desc for view, but we need asc for report text
+
+          // Calculate Total
+          let totalMins = 0;
+          let textOutput = `Timesheet for ${
+            this.userName
+          }\nPeriod: ${this.getMonthName(
+            month
+          )} ${startDay}-${endDay}\n------------------\n`;
+
+          // Sort Ascending for text report
+          [...reportData].reverse().forEach((item) => {
+            if (item.type === "work" && item.out) {
+              totalMins += item.duration;
+              const tIn = this.formatTime(new Date(item.in));
+              const tOut = this.formatTime(new Date(item.out));
+              const dur = this.minsToHm(item.duration);
+              // 12.20 12:58pm - 9:55pm (8 hours, 57 minutes)
+              // Simplified format for readability:
+              textOutput += `${item.date} ${tIn} - ${tOut} (${dur})\n`;
+            } else if (item.type.includes("Off")) {
+              totalMins += item.duration;
+              textOutput += `${item.date} ${item.type} (${this.minsToHm(
+                item.duration
+              )})\n`;
+            }
+          });
+
+          const totalHours = Math.floor(totalMins / 60);
+          const totalRemMins = totalMins % 60;
+
+          textOutput += `------------------\nTotal: ${totalHours}h ${totalRemMins}m`;
+
+          document.getElementById(
+            "total-hours"
+          ).innerText = `${totalHours}h ${totalRemMins}m`;
+          document.getElementById("report-text").value = textOutput;
+        }
+
+        copyReport() {
+          const text = document.getElementById("report-text").value;
+          this.copyToClipboard(text);
+        }
+
+        copyToClipboard(text) {
+          navigator.clipboard
+            .writeText(text)
+            .then(() => {
+              const toast = document.getElementById("toast");
+              toast.classList.add("show");
+              setTimeout(() => toast.classList.remove("show"), 2000);
+            })
+            .catch((err) => {
+              console.error("Failed to copy: ", err);
+              alert("Could not copy automatically. Please copy manually.");
+            });
+        }
+
+        exportData() {
+          const dataStr =
+            "data:text/json;charset=utf-8," +
+            encodeURIComponent(JSON.stringify(this.data));
+          const downloadAnchorNode = document.createElement("a");
+          downloadAnchorNode.setAttribute("href", dataStr);
+          downloadAnchorNode.setAttribute(
+            "download",
+            "work_tracker_backup.json"
+          );
+          document.body.appendChild(downloadAnchorNode);
+          downloadAnchorNode.click();
+          downloadAnchorNode.remove();
+        }
+
+        clearAllData() {
+          if (confirm("Are you sure? This deletes everything.")) {
+            localStorage.clear();
+            location.reload();
+          }
+        }
+      }
+
+      const app = new WorkTracker();
+    </script>
+  </body>
+</html>
