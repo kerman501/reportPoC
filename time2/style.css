@@ -1,10 +1,10 @@
 :root {
   --navy: #1c1c57;
   --pink: #ff399a;
-  --pink-dark: #d61c75;
   --bg: #f4f5f7;
   --white: #ffffff;
   --gray: #8d94a3;
+  --border-light: #e5e7eb;
   --font: "Poppins", sans-serif;
 }
 
@@ -16,7 +16,8 @@ body {
   height: 100vh;
   display: flex;
   justify-content: center;
-  overflow: hidden; /* Prevent scroll on main screen */
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .app {
@@ -30,7 +31,7 @@ body {
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Header */
+/* Header & Icons */
 header {
   padding: 20px;
   display: flex;
@@ -43,20 +44,50 @@ header {
   font-size: 24px;
   letter-spacing: -1px;
 }
-
 .pink-text {
   color: var(--pink);
+}
+
+.history-wrapper {
+  position: relative;
 }
 
 .icon-btn {
   background: none;
   border: none;
-  font-size: 24px;
   cursor: pointer;
   padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn img {
+  width: 32px;
+  height: 32px;
 }
 
-/* Dashboard Layout */
+/* Notification Badge */
+.badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--pink);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--white);
+}
+.badge.hidden {
+  display: none;
+}
+
+/* Dashboard & Username Input */
 #dashboard {
   flex: 1;
   display: flex;
@@ -66,61 +97,89 @@ header {
   overflow-y: auto;
 }
 
-.user-display input {
+.user-display {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#username {
   font-family: var(--font);
-  font-size: 20px;
-  font-weight: 600;
+  font-size: 22px;
+  font-weight: 700;
   text-align: center;
   border: none;
-  border-bottom: 2px solid transparent;
+  /* Default visible border */
+  border-bottom: 2px solid var(--border-light);
   color: var(--navy);
   width: 100%;
-  padding: 5px;
-  margin-bottom: 10px;
+  padding: 8px 0;
   transition: 0.3s;
+  background: transparent;
+  border-radius: 0; /* Fix for iOS rounded corners */
 }
-
-.user-display input:focus {
+#username::placeholder {
+  color: #ccc;
+  font-weight: 400;
+}
+#username:focus {
   outline: none;
-  border-bottom: 2px solid var(--pink);
+  border-bottom-color: var(--pink) !important;
 }
 
-/* Timer Ring */
+/* Style when name is filled */
+#username.filled {
+  border-bottom-color: transparent;
+}
+
+/* Error shake animation */
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  75% {
+    transform: translateX(5px);
+  }
+}
+.input-error {
+  animation: shake 0.3s;
+  border-bottom-color: var(--pink) !important;
+  color: var(--pink) !important;
+}
+
+/* Timer Ring (unchanged) */
 .timer-container {
   position: relative;
   width: 260px;
   height: 260px;
   margin: 20px 0;
 }
-
 .progress-ring {
   transform: rotate(-90deg);
 }
-
 circle {
   fill: transparent;
-  stroke-width: 12; /* Thicker styling */
+  stroke-width: 12;
   stroke-linecap: round;
 }
-
 .ring-track {
-  stroke: #e5e7eb;
+  stroke: var(--border-light);
 }
-
 .ring-progress-blue {
   stroke: var(--navy);
-  stroke-dasharray: 691; /* 2 * PI * 110 */
+  stroke-dasharray: 691;
   stroke-dashoffset: 691;
   transition: stroke-dashoffset 0.5s;
 }
-
 .ring-progress-pink {
   stroke: var(--pink);
   stroke-dasharray: 691;
   stroke-dashoffset: 691;
   transition: stroke-dashoffset 0.5s;
 }
-
 .timer-text {
   position: absolute;
   top: 50%;
@@ -128,7 +187,6 @@ circle {
   transform: translate(-50%, -50%);
   text-align: center;
 }
-
 #status-label {
   font-size: 12px;
   font-weight: 600;
@@ -136,12 +194,11 @@ circle {
   text-transform: uppercase;
   letter-spacing: 1px;
 }
-
 #main-timer {
   font-size: 42px;
   font-weight: 700;
   color: var(--navy);
-  font-variant-numeric: tabular-nums; /* Monospaced numbers */
+  font-variant-numeric: tabular-nums;
   line-height: 1;
 }
 
@@ -169,7 +226,6 @@ circle {
   width: 100%;
   text-align: center;
 }
-
 .btn-main {
   background: var(--pink);
   color: white;
@@ -177,14 +233,14 @@ circle {
   font-size: 20px;
   font-weight: 700;
   border: none;
-  border-radius: 50px; /* Fully rounded */
+  border-radius: 50px;
   padding: 18px 0;
   width: 100%;
   cursor: pointer;
   box-shadow: 0 4px 15px rgba(255, 57, 154, 0.4);
   transition: transform 0.1s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
 }
-
 .btn-main:active {
   transform: scale(0.98);
 }
@@ -192,17 +248,15 @@ circle {
   background: var(--navy);
   box-shadow: 0 4px 15px rgba(28, 28, 87, 0.4);
 }
-
 .sub-controls {
   display: flex;
   gap: 10px;
   margin-top: 15px;
 }
-
 .btn-sub {
   flex: 1;
   padding: 12px;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--border-light);
   background: white;
   border-radius: 12px;
   font-weight: 600;
@@ -210,7 +264,7 @@ circle {
   cursor: pointer;
 }
 
-/* Preview Box */
+/* Preview & Modal (minor tweaks) */
 .msg-preview {
   margin-top: 20px;
   width: 100%;
@@ -225,11 +279,6 @@ circle {
   cursor: pointer;
   font-size: 14px;
 }
-.msg-preview:active {
-  background: #e9ecef;
-}
-
-/* Modal (History) */
 .modal {
   position: absolute;
   top: 0;
@@ -245,7 +294,6 @@ circle {
 .modal.hidden {
   transform: translateY(100%);
 }
-
 .modal-header {
   padding: 20px;
   border-bottom: 1px solid #eee;
@@ -253,14 +301,15 @@ circle {
   justify-content: space-between;
   align-items: center;
 }
-
+.modal-header h2 {
+  margin: 0;
+  color: var(--navy);
+}
 .modal-content {
   padding: 20px;
   overflow-y: auto;
   flex: 1;
 }
-
-/* History List */
 #history-list {
   list-style: none;
   padding: 0;
@@ -272,10 +321,6 @@ circle {
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-}
-.item-left {
-  display: flex;
-  flex-direction: column;
 }
 .item-date {
   font-weight: 700;
@@ -290,9 +335,8 @@ circle {
   background: none;
   border: none;
   font-weight: bold;
+  padding: 5px 10px;
 }
-
-/* Inputs & Selects in Modal */
 select {
   width: 100%;
   padding: 10px;
@@ -301,8 +345,8 @@ select {
   font-size: 16px;
   margin-bottom: 15px;
   font-family: var(--font);
+  outline: none;
 }
-
 .total-badge {
   background: var(--navy);
   color: white;
@@ -312,7 +356,6 @@ select {
   font-weight: 600;
   margin-bottom: 20px;
 }
-
 .btn-outline {
   width: 100%;
   padding: 12px;
@@ -321,6 +364,7 @@ select {
   color: var(--navy);
   font-weight: 700;
   border-radius: 10px;
+  cursor: pointer;
 }
 .btn-danger {
   width: 100%;
@@ -330,9 +374,8 @@ select {
   border: none;
   border-radius: 10px;
   font-weight: 600;
+  cursor: pointer;
 }
-
-/* Toast */
 #toast {
   position: fixed;
   bottom: 30px;
@@ -346,6 +389,7 @@ select {
   transition: 0.3s;
   pointer-events: none;
   font-weight: 600;
+  z-index: 20;
 }
 #toast.show {
   opacity: 1;

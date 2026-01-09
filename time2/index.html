@@ -6,7 +6,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
-    <title>MoveTracker</title>
+    <title>TimeTracker</title>
 
     <link rel="manifest" href="manifest.json" />
     <link rel="apple-touch-icon" href="icon-192.png" />
@@ -23,8 +23,13 @@
   <body>
     <div class="app">
       <header>
-        <div class="logo">MOVE<span class="pink-text">TRACKER</span></div>
-        <button id="history-btn" class="icon-btn">📜</button>
+        <div class="logo">TIME<span class="pink-text">TRACKER</span></div>
+        <div class="history-wrapper">
+          <button id="history-btn" class="icon-btn">
+            <img src="iconlogs2.png" alt="History" />
+          </button>
+          <span id="history-badge" class="badge hidden">0</span>
+        </div>
       </header>
 
       <main id="dashboard">
@@ -32,7 +37,7 @@
           <input
             type="text"
             id="username"
-            placeholder="John Smith"
+            placeholder="Enter Your Name"
             autocomplete="off"
           />
         </div>
@@ -130,11 +135,10 @@
 
     <script src="script.js"></script>
     <script>
-      // Register Service Worker for PWA
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("sw.js")
-          .then(() => console.log("Service Worker Registered"));
+          .then(() => console.log("SW Registered"));
       }
     </script>
   </body>

@@ -1,9 +1,11 @@
-class MoveTracker {
+class TimeTracker {
   constructor() {
-    this.data = JSON.parse(localStorage.getItem("mt_data")) || [];
-    this.status = localStorage.getItem("mt_status") || "out";
-    this.currentShiftId = localStorage.getItem("mt_shiftId") || null;
-    this.userName = localStorage.getItem("mt_user") || "";
+    this.data = JSON.parse(localStorage.getItem("tt_data")) || [];
+    this.status = localStorage.getItem("tt_status") || "out";
+    this.currentShiftId = localStorage.getItem("tt_shiftId") || null;
+    this.userName = localStorage.getItem("tt_user") || "";
+    // Badge counter (not saved to localstorage, resets on reload)
+    this.unreadLogs = 0;
 
     this.timerInterval = null;
     this.quotes = [
@@ -13,11 +15,10 @@ class MoveTracker {
       "Make it look easy.",
       "Quality over speed.",
       "Safety first, speed second.",
-      "Build your reputation today.",
       "Focus on the details.",
+      "Stay professional.",
     ];
 
-    // UI Elements
     this.els = {
       mainBtn: document.getElementById("main-action-btn"),
       timer: document.getElementById("main-timer"),
@@ -30,19 +31,22 @@ class MoveTracker {
       historyView: document.getElementById("history-view"),
       periodSelect: document.getElementById("period-select"),
       previewText: document.getElementById("msg-text"),
+      badge: document.getElementById("history-badge"),
     };
-
     this.init();
   }
 
   init() {
     this.els.username.value = this.userName;
-    this.els.username.addEventListener("change", (e) => {
+    this.checkInputState(); // Check initial state of input border
+
+    // Username input handling
+    this.els.username.addEventListener("input", (e) => {
       this.userName = e.target.value;
-      localStorage.setItem("mt_user", this.userName);
+      localStorage.setItem("tt_user", this.userName);
+      this.checkInputState();
     });
 
-    // Event Listeners
     this.els.mainBtn.addEventListener("click", () => this.toggleClock());
     document
       .getElementById("history-btn")
@@ -58,22 +62,48 @@ class MoveTracker {
     this.els.quoteBox.addEventListener("click", () => this.hideQuote());
     this.els.periodSelect.addEventListener("change", () => this.renderReport());
 
-    // Resume timer if active
     if (this.status === "in") {
       this.startTimerLoop();
       this.showQuote();
     } else {
       this.updateRing(0);
     }
-
     this.renderUI();
+  }
+
+  // --- Validation & Input UI ---
+
+  validateUser() {
+    if (!this.userName.trim()) {
+      this.triggerError();
+      return false;
+    }
+    return true;
+  }
+
+  triggerError() {
+    this.els.username.classList.add("input-error");
+    this.showToast("Please enter your name first");
+    setTimeout(() => this.els.username.classList.remove("input-error"), 300);
+  }
+
+  checkInputState() {
+    // If name exists, remove border (add filled class)
+    if (this.userName.trim().length > 0) {
+      this.els.username.classList.add("filled");
+    } else {
+      this.els.username.classList.remove("filled");
+    }
   }
 
   // --- Core Actions ---
 
   toggleClock() {
+    if (!this.validateUser()) return; // Stop if no name
+
     const now = new Date();
     const timeStr = this.formatTime(now);
+    let msg = "";
 
     if (this.status === "out") {
       // Clock IN
@@ -89,36 +119,33 @@ class MoveTracker {
       this.currentShiftId = newShift.id;
       this.status = "in";
       this.showQuote();
-
-      const msg = `${timeStr} ${this.userName || "Driver"} - clock in`;
-      this.copyToClipboard(msg);
-      this.els.previewText.innerText = msg;
+      msg = `${timeStr} ${this.userName} - clock in`;
       this.startTimerLoop();
     } else {
       // Clock OUT
       const shift = this.data.find((s) => s.id == this.currentShiftId);
       if (shift) {
         shift.out = now.getTime();
-        shift.duration = Math.floor((shift.out - shift.in) / 60000); // mins
+        shift.duration = Math.floor((shift.out - shift.in) / 60000);
       }
       this.status = "out";
       this.currentShiftId = null;
       this.stopTimerLoop();
       this.hideQuote();
-
-      const msg = `${timeStr} ${this.userName || "Driver"} - clock out`;
-      this.copyToClipboard(msg);
-      this.els.previewText.innerText = msg;
+      msg = `${timeStr} ${this.userName} - clock out`;
     }
 
     this.save();
     this.renderUI();
+    this.copyToClipboard(msg);
+    this.els.previewText.innerText = msg;
+    this.incrementBadge();
   }
 
   addSpecialDay(type) {
+    if (!this.validateUser()) return; // Stop if no name
     const now = new Date();
     const dur = type === "Paid Off" ? 480 : 0;
-
     this.data.unshift({
       id: Date.now(),
       dateObj: now.toISOString(),
@@ -127,72 +154,72 @@ class MoveTracker {
       out: null,
       duration: dur,
     });
-
     this.save();
     const msg = `${this.formatDate(now)} ${this.userName} - ${type}`;
     this.copyToClipboard(msg);
     this.els.previewText.innerText = msg;
     this.showToast(`${type} added`);
+    this.incrementBadge();
+  }
+
+  // --- Badge Logic ---
+  incrementBadge() {
+    this.unreadLogs++;
+    this.updateBadgeUI();
+  }
+  resetBadge() {
+    this.unreadLogs = 0;
+    this.updateBadgeUI();
+  }
+  updateBadgeUI() {
+    if (this.unreadLogs > 0) {
+      this.els.badge.innerText = this.unreadLogs > 9 ? "9+" : this.unreadLogs;
+      this.els.badge.classList.remove("hidden");
+    } else {
+      this.els.badge.classList.add("hidden");
+    }
   }
 
   // --- Timer & Visuals ---
-
   startTimerLoop() {
     if (this.timerInterval) clearInterval(this.timerInterval);
-    this.updateTimer(); // immediate
+    this.updateTimer();
     this.timerInterval = setInterval(() => this.updateTimer(), 1000);
   }
-
   stopTimerLoop() {
     if (this.timerInterval) clearInterval(this.timerInterval);
     this.els.timer.innerText = "00:00:00";
     this.updateRing(0);
   }
-
   updateTimer() {
     const shift = this.data.find((s) => s.id == this.currentShiftId);
     if (!shift) return;
-
-    const now = new Date();
-    const diffMs = now.getTime() - shift.in;
-    const totalSeconds = Math.floor(diffMs / 1000);
-
-    // Format HH:MM:SS
+    const totalSeconds = Math.floor((new Date().getTime() - shift.in) / 1000);
     const h = Math.floor(totalSeconds / 3600);
     const m = Math.floor((totalSeconds % 3600) / 60);
     const s = totalSeconds % 60;
     this.els.timer.innerText = `${h.toString().padStart(2, "0")}:${m
       .toString()
       .padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-
     this.updateRing(totalSeconds);
   }
-
   updateRing(totalSeconds) {
-    // Circumference is 691 (2 * PI * 110)
     const C = 691;
-    const eightHoursSec = 8 * 3600; // 28800 seconds
-
-    // Blue Ring (0 - 8 hours)
+    const eightHoursSec = 8 * 3600;
     let blueProgress = Math.min(totalSeconds / eightHoursSec, 1);
-    let blueOffset = C - blueProgress * C;
-    this.els.ringBlue.style.strokeDashoffset = blueOffset;
-
-    // Pink Ring (8 - 16 hours) - Overtime
+    this.els.ringBlue.style.strokeDashoffset = C - blueProgress * C;
     if (totalSeconds > eightHoursSec) {
       let pinkProgress = Math.min(
         (totalSeconds - eightHoursSec) / eightHoursSec,
         1
       );
-      let pinkOffset = C - pinkProgress * C;
-      this.els.ringPink.style.strokeDashoffset = pinkOffset;
+      this.els.ringPink.style.strokeDashoffset = C - pinkProgress * C;
     } else {
-      this.els.ringPink.style.strokeDashoffset = C; // Empty
+      this.els.ringPink.style.strokeDashoffset = C;
     }
   }
 
   // --- UI Helpers ---
-
   renderUI() {
     if (this.status === "in") {
       this.els.mainBtn.innerText = "CLOCK OUT";
@@ -206,19 +233,18 @@ class MoveTracker {
       this.els.status.style.color = "var(--gray)";
     }
   }
-
   showQuote() {
-    const r = Math.floor(Math.random() * this.quotes.length);
-    this.els.quoteText.innerText = this.quotes[r];
+    this.els.quoteText.innerText =
+      this.quotes[Math.floor(Math.random() * this.quotes.length)];
     this.els.quoteBox.classList.remove("hidden");
   }
-
   hideQuote() {
     this.els.quoteBox.classList.add("hidden");
   }
 
   toggleHistory(show) {
     if (show) {
+      this.resetBadge(); // Reset badge on open
       this.populatePeriods();
       this.renderHistoryList();
       this.renderReport();
@@ -229,17 +255,14 @@ class MoveTracker {
   }
 
   // --- Data & Formatting ---
-
   save() {
-    localStorage.setItem("mt_data", JSON.stringify(this.data));
-    localStorage.setItem("mt_status", this.status);
+    localStorage.setItem("tt_data", JSON.stringify(this.data));
+    localStorage.setItem("tt_status", this.status);
     if (this.currentShiftId)
-      localStorage.setItem("mt_shiftId", this.currentShiftId);
-    else localStorage.removeItem("mt_shiftId");
+      localStorage.setItem("tt_shiftId", this.currentShiftId);
+    else localStorage.removeItem("tt_shiftId");
   }
-
   formatTime(d) {
-    // 8:55pm
     return d
       .toLocaleTimeString("en-US", {
         hour: "numeric",
@@ -249,24 +272,17 @@ class MoveTracker {
       .toLowerCase()
       .replace(/\s/g, "");
   }
-
   formatDate(d) {
-    // Jan 9 (Standard US friendly)
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
   }
-
   minsToHm(m) {
-    const h = Math.floor(m / 60);
-    const min = m % 60;
-    return `${h}h ${min}m`;
+    return `${Math.floor(m / 60)}h ${m % 60}m`;
   }
-
   copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      this.showToast("Copied to clipboard!");
-    });
+    navigator.clipboard
+      .writeText(text)
+      .then(() => this.showToast("Copied to clipboard!"));
   }
-
   showToast(msg) {
     const t = document.getElementById("toast");
     t.innerText = msg;
@@ -275,85 +291,56 @@ class MoveTracker {
   }
 
   // --- Reports ---
-
   populatePeriods() {
     const select = this.els.periodSelect;
     select.innerHTML = "";
-
-    // Generate current + past 3 periods
     const today = new Date();
-    let currentM = today.getMonth();
-    let currentY = today.getFullYear();
-
-    // Helper to add option
-    const addOpt = (y, m, isFirstHalf) => {
+    const currentY = today.getFullYear();
+    const currentM = today.getMonth();
+    const addOpt = (y, m, isFirst) => {
       const mName = new Date(y, m, 1).toLocaleDateString("en-US", {
         month: "short",
       });
-      const label = isFirstHalf
-        ? `${mName} 1-15, ${y}`
-        : `${mName} 16-End, ${y}`;
-      const val = `${y}-${m}-${isFirstHalf ? "1-15" : "16-31"}`;
+      const val = `${y}-${m}-${isFirst ? "1-15" : "16-31"}`;
       const opt = document.createElement("option");
       opt.value = val;
-      opt.innerText = label;
+      opt.innerText = `${mName} ${isFirst ? "1-15" : "16-End"}, ${y}`;
       select.appendChild(opt);
     };
-
-    // Logic: if today is 10th, show 1-15 first. If 20th, show 16-end first.
     const isFirst = today.getDate() <= 15;
-
-    // Current Period
     addOpt(currentY, currentM, isFirst);
-    // Alternate period of current month
     addOpt(currentY, currentM, !isFirst);
-
-    // Previous month
-    let prevDate = new Date(currentY, currentM - 1, 1);
-    addOpt(prevDate.getFullYear(), prevDate.getMonth(), false); // 16-end
-    addOpt(prevDate.getFullYear(), prevDate.getMonth(), true); // 1-15
+    const prevDate = new Date(currentY, currentM - 1, 1);
+    addOpt(prevDate.getFullYear(), prevDate.getMonth(), false);
+    addOpt(prevDate.getFullYear(), prevDate.getMonth(), true);
   }
-
   renderHistoryList() {
     const list = document.getElementById("history-list");
     list.innerHTML = "";
     this.data.slice(0, 15).forEach((item) => {
       const li = document.createElement("li");
       li.className = "history-item";
-      const d = new Date(item.dateObj);
-
-      let desc = "";
-      if (item.type === "work") {
-        const outTime = item.out
-          ? this.formatTime(new Date(item.out))
-          : "Active";
-        desc = `${this.formatTime(
-          new Date(item.in)
-        )} - ${outTime} (${this.minsToHm(item.duration)})`;
-      } else {
-        desc = `${item.type} (${this.minsToHm(item.duration)})`;
-      }
-
-      li.innerHTML = `
-                <div class="item-left">
-                    <span class="item-date">${this.formatDate(d)}</span>
-                    <span class="item-time">${desc}</span>
-                </div>
-                <button class="del-btn" onclick="app.deleteItem(${
-                  item.id
-                })">Del</button>
-            `;
+      let desc =
+        item.type === "work"
+          ? `${this.formatTime(new Date(item.in))} - ${
+              item.out ? this.formatTime(new Date(item.out)) : "Active"
+            }`
+          : item.type;
+      if (item.duration > 0) desc += ` (${this.minsToHm(item.duration)})`;
+      li.innerHTML = `<div class="item-left"><span class="item-date">${this.formatDate(
+        new Date(item.dateObj)
+      )}</span><span class="item-time">${desc}</span></div><button class="del-btn" onclick="app.deleteItem(${
+        item.id
+      })">Del</button>`;
       list.appendChild(li);
     });
   }
-
   renderReport() {
     const val = this.els.periodSelect.value;
     if (!val) return;
     const [y, m, range] = val.split("-");
     const [startD, endD] = range.includes("15") ? [1, 15] : [16, 31];
-
-    const reportItems = this.data
+    const items = this.data
       .filter((i) => {
         const d = new Date(i.dateObj);
         return (
@@ -363,65 +350,59 @@ class MoveTracker {
           d.getDate() <= endD
         );
       })
-      .sort((a, b) => new Date(a.dateObj) - new Date(b.dateObj)); // Ascending
-
-    let totalMins = 0;
+      .sort((a, b) => new Date(a.dateObj) - new Date(b.dateObj));
+    let total = 0;
     let text = `Timesheet: ${this.userName}\nPeriod: ${
       this.els.periodSelect.options[this.els.periodSelect.selectedIndex].text
     }\n----------------\n`;
-
-    reportItems.forEach((i) => {
+    items.forEach((i) => {
       const dStr = this.formatDate(new Date(i.dateObj));
       if (i.type === "work" && i.out) {
-        totalMins += i.duration;
+        total += i.duration;
         text += `${dStr} ${this.formatTime(new Date(i.in))} - ${this.formatTime(
           new Date(i.out)
         )} (${this.minsToHm(i.duration)})\n`;
       } else if (i.type.includes("Off")) {
-        totalMins += i.duration;
+        total += i.duration;
         text += `${dStr} ${i.type} (${this.minsToHm(i.duration)})\n`;
       }
     });
-
-    const totalH = Math.floor(totalMins / 60);
-    const totalM = totalMins % 60;
-    document.getElementById("total-hours").innerText = `${totalH}h ${totalM}m`;
-
-    text += `----------------\nTotal: ${totalH}h ${totalM}m`;
-    this.reportString = text;
+    document.getElementById("total-hours").innerText = this.minsToHm(total);
+    this.reportString =
+      text + `----------------\nTotal: ${this.minsToHm(total)}`;
   }
-
   copyReport() {
     this.copyToClipboard(this.reportString);
   }
-
   deleteItem(id) {
     if (confirm("Delete entry?")) {
       this.data = this.data.filter((i) => i.id !== id);
+      if (this.currentShiftId === id) {
+        this.status = "out";
+        this.currentShiftId = null;
+        this.stopTimerLoop();
+        this.renderUI();
+      }
       this.save();
       this.renderHistoryList();
       this.renderReport();
     }
   }
-
   clearData() {
-    if (confirm("Delete ALL history? Cannot be undone.")) {
+    if (confirm("Delete ALL history?")) {
       localStorage.clear();
       location.reload();
     }
   }
-
   exportData() {
-    const str =
+    const a = document.createElement("a");
+    a.href =
       "data:text/json;charset=utf-8," +
       encodeURIComponent(JSON.stringify(this.data));
-    const anchor = document.createElement("a");
-    anchor.setAttribute("href", str);
-    anchor.setAttribute("download", "movetracker_backup.json");
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
+    a.download = "timetracker_backup.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   }
 }
-
-const app = new MoveTracker();
+const app = new TimeTracker();
