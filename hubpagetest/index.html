@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Team Hub | Piece of Cake</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: "#1c1c57",
+              pink: "#ff399a",
+              bg: "#f4f5f7",
+              gray: "#8d94a3",
+              border: "#e5e7eb",
+            },
+            fontFamily: {
+              sans: ["Poppins", "sans-serif"],
+            },
+            boxShadow: {
+              soft: "0 10px 40px -10px rgba(28, 28, 87, 0.08)",
+              glow: "0 0 20px rgba(255, 57, 154, 0.3)",
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      /* Custom Styles for that "Premium" feel */
+      body {
+        background-color: #f4f5f7;
+        /* Disable pinch zoom on iOS for native app feel */
+        touch-action: pan-x pan-y;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      /* Ambient Background Gradients */
+      .ambient-blob {
+        position: fixed;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: -1;
+        opacity: 0.4;
+        animation: float 10s infinite ease-in-out;
+      }
+      .blob-1 {
+        top: -10%;
+        left: -10%;
+        width: 300px;
+        height: 300px;
+        background: #ff399a;
+      }
+      .blob-2 {
+        bottom: -10%;
+        right: -10%;
+        width: 250px;
+        height: 250px;
+        background: #1c1c57;
+      }
+
+      @keyframes float {
+        0%,
+        100% {
+          transform: translate(0, 0);
+        }
+        50% {
+          transform: translate(20px, 30px);
+        }
+      }
+
+      /* Card Interactions */
+      .bento-card {
+        transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+          box-shadow 0.2s ease;
+        backdrop-filter: blur(10px);
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.6);
+      }
+
+      /* Active state for mobile (when finger presses down) */
+      .bento-card:active {
+        transform: scale(0.96);
+        background: rgba(255, 255, 255, 1);
+      }
+
+      /* Animation for entry */
+      .fade-in-up {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.6s forwards;
+      }
+
+      @keyframes fadeInUp {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Stagger delays */
+      .delay-1 {
+        animation-delay: 0.1s;
+      }
+      .delay-2 {
+        animation-delay: 0.2s;
+      }
+      .delay-3 {
+        animation-delay: 0.3s;
+      }
+    </style>
+  </head>
+  <body
+    class="font-sans text-navy min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden"
+  >
+    <div class="ambient-blob blob-1"></div>
+    <div class="ambient-blob blob-2"></div>
+
+    <main class="w-full max-w-md w-full mx-auto space-y-6">
+      <header class="mb-8 fade-in-up">
+        <p
+          class="text-gray text-sm font-medium uppercase tracking-wider mb-1"
+          id="current-date"
+        >
+          Loading...
+        </p>
+        <h1 class="text-3xl font-bold text-navy">
+          Hello, <span class="text-pink">Team!</span>
+        </h1>
+        <p class="text-navy/60 text-sm mt-1">Select an app to continue.</p>
+      </header>
+
+      <a
+        href="https://tt.mpoctools.com/"
+        class="bento-card fade-in-up delay-1 block w-full rounded-3xl shadow-soft p-5 group cursor-pointer relative overflow-hidden"
+      >
+        <div
+          class="absolute top-0 right-0 w-24 h-24 bg-pink/5 rounded-full -mr-10 -mt-10 transition-transform group-hover:scale-110"
+        ></div>
+
+        <div class="flex items-center justify-between relative z-10">
+          <div class="flex items-center gap-4">
+            <div
+              class="w-14 h-14 rounded-2xl bg-pink text-white flex items-center justify-center text-2xl shadow-glow"
+            >
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-navy">Time Tracker</h2>
+              <p class="text-xs text-gray">Clock In / Clock Out</p>
+            </div>
+          </div>
+          <div
+            class="w-8 h-8 rounded-full bg-bg flex items-center justify-center text-gray"
+          >
+            <i class="fa-solid fa-chevron-right text-sm"></i>
+          </div>
+        </div>
+      </a>
+
+      <div class="grid grid-cols-1 gap-4">
+        <a
+          href="https://bins.mpoctools.com/"
+          class="bento-card fade-in-up delay-2 block w-full rounded-3xl shadow-soft p-5 flex items-center justify-between cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-2xl bg-navy/10 text-navy flex items-center justify-center text-xl"
+            >
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-navy">Inventory</h2>
+              <p class="text-xs text-gray">Bin Management</p>
+            </div>
+          </div>
+          <i
+            class="fa-solid fa-arrow-up-right-from-square text-gray/50 text-sm"
+          ></i>
+        </a>
+
+        <a
+          href="https://report.mpoctools.com/"
+          class="bento-card fade-in-up delay-3 block w-full rounded-3xl shadow-soft p-5 flex items-center justify-between cursor-pointer"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-2xl bg-navy/10 text-navy flex items-center justify-center text-xl"
+            >
+              <i class="fa-solid fa-file-contract"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-navy">Reports</h2>
+              <p class="text-xs text-gray">Generate PDF</p>
+            </div>
+          </div>
+          <i
+            class="fa-solid fa-arrow-up-right-from-square text-gray/50 text-sm"
+          ></i>
+        </a>
+      </div>
+    </main>
+
+    <script>
+      // Set dynamic date in English
+      const dateElement = document.getElementById("current-date");
+      const options = { weekday: "long", month: "long", day: "numeric" };
+      const today = new Date();
+      dateElement.textContent = today.toLocaleDateString("en-US", options);
+    </script>
+  </body>
+</html>
