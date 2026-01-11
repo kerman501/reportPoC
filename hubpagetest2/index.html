@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>Team Hub | Dark Premium</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              navy: "#1c1c57",
+              navyLight: "#2a2a6b", // Чуть светлее для кнопок
+              pink: "#ff399a",
+              white: "#ffffff",
+              gray: "#8d94a3",
+              border: "rgba(255, 255, 255, 0.1)",
+            },
+            fontFamily: {
+              sans: ["Poppins", "sans-serif"],
+            },
+          },
+        },
+      };
+    </script>
+
+    <style>
+      body {
+        background-color: #1c1c57; /* Основной темный фон */
+        color: #ffffff;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: pan-y; /* Разрешаем скролл, запрещаем зум */
+      }
+
+      /* Glassmorphism для карточек в темной теме */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.05); /* Очень прозрачный белый */
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Эффект нажатия (Active State) */
+      .glass-card:active,
+      .clicked-animation {
+        transform: scale(0.96);
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(
+          255,
+          57,
+          154,
+          0.5
+        ); /* Розовая подсветка при нажатии */
+      }
+
+      /* Анимация появления */
+      .slide-in {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: slideIn 0.5s ease-out forwards;
+      }
+
+      @keyframes slideIn {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Волна при клике (Ripple effect) - опционально, но добавляет "жизни" */
+      .ripple {
+        position: absolute;
+        background: rgba(255, 57, 154, 0.3);
+        border-radius: 50%;
+        transform: scale(0);
+        animation: ripple-anim 0.6s linear;
+        pointer-events: none;
+      }
+
+      @keyframes ripple-anim {
+        to {
+          transform: scale(4);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body
+    class="min-h-screen flex flex-col items-center justify-center p-6 relative"
+  >
+    <div
+      class="fixed top-0 left-0 w-full h-1/2 bg-gradient-to-b from-[#ff399a]/10 to-transparent pointer-events-none"
+    ></div>
+
+    <main class="w-full max-w-md mx-auto z-10">
+      <header class="mb-10 slide-in" style="animation-delay: 0s">
+        <div class="flex items-center justify-between mb-2">
+          <span
+            class="text-gray text-xs font-medium tracking-[0.2em] uppercase"
+            id="current-date"
+            >Loading...</span
+          >
+          <div
+            class="w-2 h-2 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.5)]"
+          ></div>
+        </div>
+        <h1 class="text-3xl font-bold text-white leading-tight">
+          Hub <span class="text-pink">Control</span>
+        </h1>
+        <p class="text-gray/80 text-sm mt-1">Choose your workspace</p>
+      </header>
+
+      <div class="space-y-4">
+        <a
+          href="https://tt.mpoctools.com/"
+          class="nav-link glass-card slide-in block w-full rounded-2xl p-4 flex items-center justify-between group relative overflow-hidden"
+          style="animation-delay: 0.1s"
+        >
+          <div class="flex items-center gap-4 relative z-10">
+            <div
+              class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink to-purple-600 flex items-center justify-center text-white text-lg shadow-lg shadow-pink/20"
+            >
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white">Time Clock</h2>
+              <p class="text-xs text-gray-300">Clock In / Out</p>
+            </div>
+          </div>
+          <div
+            class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:text-pink transition-colors"
+          >
+            <i class="fa-solid fa-chevron-right text-xs"></i>
+          </div>
+        </a>
+
+        <a
+          href="https://report.mpoctools.com/"
+          class="nav-link glass-card slide-in block w-full rounded-2xl p-4 flex items-center justify-between group relative overflow-hidden"
+          style="animation-delay: 0.2s"
+        >
+          <div class="flex items-center gap-4 relative z-10">
+            <div
+              class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-pink text-lg border border-white/5"
+            >
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white">Reports</h2>
+              <p class="text-xs text-gray-300">Generate PDF</p>
+            </div>
+          </div>
+          <div
+            class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400"
+          >
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </div>
+        </a>
+
+        <a
+          href="https://bins.mpoctools.com/"
+          class="nav-link glass-card slide-in block w-full rounded-2xl p-4 flex items-center justify-between group relative overflow-hidden"
+          style="animation-delay: 0.3s"
+        >
+          <div class="flex items-center gap-4 relative z-10">
+            <div
+              class="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center text-pink text-lg border border-white/5"
+            >
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-white">Bins</h2>
+              <p class="text-xs text-gray-300">Manage Inventory</p>
+            </div>
+          </div>
+          <div
+            class="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-gray-400"
+          >
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </div>
+        </a>
+
+        <div
+          class="glass-card slide-in block w-full rounded-2xl p-4 flex items-center justify-between opacity-60 grayscale cursor-not-allowed"
+          style="animation-delay: 0.4s"
+        >
+          <div class="flex items-center gap-4">
+            <div
+              class="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-gray-500 text-lg border border-white/5"
+            >
+              <i class="fa-solid fa-rocket"></i>
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-gray-400">Coming Soon</h2>
+              <p class="text-xs text-gray-500">New tools ahead</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      // 1. Дата
+      const dateElement = document.getElementById("current-date");
+      const options = { weekday: "short", day: "numeric", month: "long" };
+      dateElement.textContent = new Date().toLocaleDateString("en-US", options);
+
+      // 2. Логика плавног перехода (Delay Navigation)
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", function (e) {
+          e.preventDefault(); // Останавливаем мгновенный переход
+
+          const targetUrl = this.getAttribute("href");
+          const self = this;
+
+          // Добавляем класс анимации (если нужно усилить эффект через JS)
+          self.classList.add("clicked-animation");
+
+          // Создаем эффект Ripple (волна) в точке клика
+          const rect = self.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+
+          const ripple = document.createElement("span");
+          ripple.classList.add("ripple");
+          ripple.style.left = `${x}px`;
+          ripple.style.top = `${y}px`;
+          self.appendChild(ripple);
+
+          // Ждем 350мс пока проиграется анимация, потом переходим
+          setTimeout(() => {
+            window.location.href = targetUrl;
+          }, 350);
+        });
+      });
+    </script>
+  </body>
+</html>
